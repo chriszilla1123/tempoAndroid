@@ -14,6 +14,10 @@
                 android:id="@+id/nav_songs"
                 android:icon="@drawable/ic_music_note_black_24dp"
                 android:title="@string/songs"/>
+        <item
+                android:id="@+id/nav_player"
+                android:icon="@drawable/ic_play_arrow_black_24dp"
+                android:title="@string/player"/>
     </group>
 
 </menu>

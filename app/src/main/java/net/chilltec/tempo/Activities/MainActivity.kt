@@ -4,13 +4,14 @@ import android.app.SearchManager
 import android.content.*
 import kotlinx.android.synthetic.main. activity_main.*
 import android.os.*
-import android.support.v4.app.Fragment
+import android.support.v4.view.GravityCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.SearchView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import net.chilltec.tempo.R
+import net.chilltec.tempo.R.id.*
 import net.chilltec.tempo.Services.DatabaseService
 import net.chilltec.tempo.Services.MediaService
 
@@ -41,9 +42,16 @@ class MainActivity : AppCompatActivity()  {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        //Toolbar Init
         setSupportActionBar(mainToolbar)
         var toolbar = supportActionBar
         toolbar?.title = "Tempo"
+        toolbar?.apply {
+            setDisplayHomeAsUpEnabled(true)
+            setHomeAsUpIndicator(R.drawable.ic_menu_white_24dp)
+        }
+        //End Toolbar Init
 
         //Initialize mediaPlayer and pass library
         var MPintent = Intent(this, MediaService::class.java)
@@ -98,22 +106,26 @@ class MainActivity : AppCompatActivity()  {
             openPlayer()
         }
 
+        //Init NavDrawer onClick listeners
         main_navview.setNavigationItemSelectedListener { menuItem ->
-            val title = menuItem.title
-            when(title){
-                "Artists" -> {
+            val id = menuItem.itemId
+            when(id){
+                nav_artists -> {
                     openArtistBrowser()
                 }
-                "Albums" -> {
+                nav_albums -> {
                     openAlbumBrowser()
                 }
-                "Songs" -> {
+                nav_songs -> {
                     openSongBrowser()
                 }
+                nav_player -> {
+                    openPlayer()
+                }
             }
-
             true
         }
+        //End Init NavDrawer onClick listeners
     }
 
     override fun onDestroy(){
@@ -134,6 +146,10 @@ class MainActivity : AppCompatActivity()  {
         return true
     }
     override fun onOptionsItemSelected(item: MenuItem?) = when(item?.itemId) {
+        android.R.id.home -> {
+            main_navdrawer.openDrawer(GravityCompat.START)
+            true
+        }
         R.id.mainPlayer -> {
             //Open the player
             val intent = Intent(this, PlayerActivity::class.java)
@@ -153,8 +169,7 @@ class MainActivity : AppCompatActivity()  {
     fun initNavBar(){
         val navView = main_navdrawer
         navView.setOnClickListener {
-            Log.i("MainManu", it.toString())
-
+            Log.i("MainMenu", it.toString())
             true
         }
     }
