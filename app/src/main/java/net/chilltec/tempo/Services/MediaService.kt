@@ -27,7 +27,7 @@ class MediaService : Service() {
     private lateinit var ms: MediaSessionCompat
     val http = OkHttpClient()
     var connManager: ConnectivityManager? = null
-    private val baseUrl = "http://www.chilltec.net/api"
+    private val baseUrl = "http://www.chrisco.top/api"
     private val TAG = "MediaService"
     private var songSet: IntArray = intArrayOf()
     private var curSong: Int = -1

@@ -21,7 +21,7 @@ class DatabaseService : Service() {
     private lateinit var artistsDB: Array<Artist>
     private lateinit var albumsDB: Array<Album>
     private lateinit var songsDB: Array<Song>
-    private val baseURL = "http://www.chilltec.net/api"
+    private val baseURL = "http://www.chrisco.top/api"
     private val artistsFileLoc = "artists.db"
     private val albumsFileLoc = "albums.db"
     private val songsFileLoc = "songs.db"
