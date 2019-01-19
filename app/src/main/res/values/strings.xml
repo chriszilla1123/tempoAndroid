@@ -9,6 +9,7 @@
     <string name="all_songs">All Songs</string>
     <string name="search">Search</string>
     <string name="clear_cache_setting_lable">Clear Cache</string>
+    <string name="rescan_library_setting_lable">Rescan Library files</string>
     <string name="player">Player</string>
 
     <!-- TODO: Remove or change this placeholder text -->

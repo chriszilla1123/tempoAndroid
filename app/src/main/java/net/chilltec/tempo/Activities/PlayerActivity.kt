@@ -244,6 +244,10 @@ class PlayerActivity : AppCompatActivity() {
             mp?.clearCache()
             true
         }
+        R.id.mainRescanLibrary -> {
+            mp?.rescanLibrary()
+            true
+        }
         else -> {
             super.onOptionsItemSelected(item)
         }

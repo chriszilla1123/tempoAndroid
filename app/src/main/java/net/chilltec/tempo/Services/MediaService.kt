@@ -344,6 +344,17 @@ class MediaService : Service() {
         }
     }
 
+    //Administrative Functions
+    fun rescanLibrary(){
+        Log.i(TAG, "Requesting the server to rescan library files")
+        val url = "$baseUrl/rescanLibrary"
+        val request = Request.Builder().url(url).build()
+        http.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException){}
+            override fun onResponse(call: Call, response: Response){}
+        })
+    }
+
     //MediaSession
     private var noiseReceiver = object: BroadcastReceiver(){
         override fun onReceive(context: Context?, intent: Intent?) {

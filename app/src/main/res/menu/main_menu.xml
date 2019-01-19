@@ -25,4 +25,9 @@
             android:id="@+id/mainClearCache"
             android:title="@string/clear_cache_setting_lable"
             app:showAsAction="never"/>
+    <!--Rescan Library Files-->
+    <item
+            android:id="@+id/mainRescanLibrary"
+            android:title="@string/rescan_library_setting_lable"
+            app:showAsAction="never"/>
 </menu>

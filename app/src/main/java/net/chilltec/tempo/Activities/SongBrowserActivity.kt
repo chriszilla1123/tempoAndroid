@@ -208,6 +208,10 @@ class SongBrowserActivity : AppCompatActivity() {
             mp?.clearCache()
             true
         }
+        R.id.mainRescanLibrary -> {
+            mp?.rescanLibrary()
+            true
+        }
         else -> {
             super.onOptionsItemSelected(item)
         }
