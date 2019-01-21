@@ -13,12 +13,14 @@
             android:textAppearance="@style/TextAppearance.AppCompat" android:visibility="invisible"/>
     <TextView
             android:text="Title"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="0dp" android:id="@+id/songTitleLable"
             android:textAppearance="@style/TextAppearance.AppCompat"
-            android:layout_marginStart="8dp" app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:textAlignment="viewStart" android:textSize="18sp" android:layout_marginTop="4dp"/>
+            android:textAlignment="viewStart" android:textSize="18sp" android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp" app:layout_constraintEnd_toEndOf="parent" android:layout_marginBottom="4dp"
+            app:layout_constraintBottom_toTopOf="@+id/songArtistLable" app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="8dp"/>
     <TextView
             android:text="Artist"
             android:layout_width="wrap_content"

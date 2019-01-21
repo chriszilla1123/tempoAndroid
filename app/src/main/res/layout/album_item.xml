@@ -12,20 +12,23 @@
             android:textAppearance="@style/TextAppearance.AppCompat"/>
     <TextView
             android:text="Album"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content" android:id="@+id/albumLable"
             android:textAppearance="@style/TextAppearance.AppCompat"
             app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
-            app:layout_constraintTop_toTopOf="parent" android:layout_marginTop="4dp" android:textSize="16sp"/>
+            app:layout_constraintTop_toTopOf="parent" android:layout_marginTop="4dp" android:textSize="16sp"
+            android:layout_marginEnd="8dp" app:layout_constraintEnd_toEndOf="parent" android:layout_marginBottom="4dp"
+            app:layout_constraintBottom_toTopOf="@+id/albumArtistLable"/>
     <TextView
             android:text="Artist"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content" android:id="@+id/albumArtistLable"
             android:textAppearance="@style/TextAppearance.AppCompat"
             android:textSize="14sp"
             android:layout_marginStart="24dp"
             app:layout_constraintStart_toStartOf="parent" android:layout_marginBottom="4dp"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintBottom_toBottomOf="parent" android:layout_marginEnd="8dp"
+            app:layout_constraintEnd_toEndOf="parent"/>
     <View
             android:id="@+id/divider"
             android:layout_width="match_parent"
