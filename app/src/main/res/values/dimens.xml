@@ -2,5 +2,6 @@
 <resources>
     <dimen name="text_margin">16dp</dimen>
     <item name="one_third" type="dimen">33.3%</item>
+    <item name="half" type="dimen">50%</item>
     <dimen name="fab_margin">16dp</dimen>
 </resources>

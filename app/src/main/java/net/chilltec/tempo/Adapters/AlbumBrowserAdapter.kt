@@ -41,6 +41,7 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
         holder.album_item.setOnLongClickListener{
             context.onLongClickHandler(holder)
         }
+        holder.album_item.albumLable.bringToFront()
     }
 
     //Return the size of the dataset, the number of albums

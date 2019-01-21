@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
 import android.support.v4.view.GravityCompat
+import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
@@ -138,7 +139,8 @@ class AlbumBrowserActivity : AppCompatActivity() {
             endActivity()
         }
 
-        viewManager = LinearLayoutManager(this)
+        //viewManager = LinearLayoutManager(this)
+        viewManager = GridLayoutManager(this, 2)
         viewAdapter = AlbumBrowserAdapter(artistsDB, albumsDB, albumList, ref)
 
         recyclerView = AlbumBrowser.apply{
