@@ -2,6 +2,7 @@ package net.chilltec.tempo.Services
 
 import android.app.Service
 import android.content.Intent
+import android.net.Uri
 import android.os.IBinder
 import android.os.*
 import android.util.Log
@@ -193,19 +194,50 @@ class DatabaseService : Service() {
     //End database range functions
 
     //Info by Song ID
+    fun getArtistIdBySongId(id: Int): Int? {
+        if(id < 1) return null
+        return songsDB[id-1].artist
+    }
+    fun getAlbumIdBySongId(id: Int): Int? {
+        if(id < 1) return null
+        return songsDB[id-1].album
+    }
     fun getArtistBySongId(id: Int): String? {
         if(id < 1) return null
         val artistID = songsDB[id-1].artist
         return artistsDB[artistID-1].artist
     }
-    fun getAlbumBySongID(id: Int): String? {
+    fun getAlbumBySongId(id: Int): String? {
         if(id < 1) return null
         val albumID = songsDB[id-1].album
         return albumsDB[albumID-1].album
     }
-    fun getTitleBySongID(id: Int): String? {
+    fun getTitleBySongId(id: Int): String? {
         if(id < 1) return null
         return songsDB[id-1].title
+    }
+    fun songHasArtwork(id: Int): Boolean{
+        //Returns true if the given song's album has artwork
+        val albumID = songsDB[id-1].album
+        val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
+        val artDir = File(artDirLoc)
+        if(!artDir.exists()){
+            return false
+        }
+        val albumArtLoc = artDirLoc + File.separator + "$albumID.art"
+        val albumArtFile = File(albumArtLoc)
+        return albumArtFile.exists()
+    }
+    fun getArtworkUriBySongId(id: Int): Uri? {
+        val albumID = songsDB[id-1].album
+        val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
+        val artDir = File(artDirLoc)
+        if(!artDir.exists()){
+            return null
+        }
+        val albumArtLoc = artDirLoc + File.separator + "$albumID.art"
+        val albumArtFile = File(albumArtLoc)
+        return Uri.fromFile(albumArtFile)
     }
     //End info by Song ID
 
@@ -221,7 +253,7 @@ class DatabaseService : Service() {
         return albumArtFile.exists()
     }
 
-    fun getAlbumArt(id: Int): File? {
+    fun getArtworkUriByAlbumId(id: Int): Uri? {
         //Returns the File object for the album artwork
         val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
         val artDir = File(artDirLoc)
@@ -230,7 +262,7 @@ class DatabaseService : Service() {
         }
         val albumArtLoc = artDirLoc + File.separator + "$id.art"
         val albumArtFile = File(albumArtLoc)
-        return albumArtFile
+        return Uri.fromFile(albumArtFile)
     }
     //End Info by Album ID
 

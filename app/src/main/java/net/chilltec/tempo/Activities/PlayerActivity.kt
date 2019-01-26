@@ -1,6 +1,7 @@
 package net.chilltec.tempo.Activities
 
 import android.content.*
+import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -12,7 +13,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.SeekBar
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_player.*
 import net.chilltec.tempo.*
 import net.chilltec.tempo.DataTypes.Album
@@ -20,6 +20,7 @@ import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Song
 import net.chilltec.tempo.Services.DatabaseService
 import net.chilltec.tempo.Services.MediaService
+import java.io.File
 
 class PlayerActivity : AppCompatActivity() {
     private lateinit var artistsDB: Array<Artist>
@@ -197,15 +198,24 @@ class PlayerActivity : AppCompatActivity() {
     private fun updateSongLables() {
         //Make this update when a new song starts.
         val songID: Int = mp?.getCurSong() ?: -1
+        val artistID: Int = db?.getArtistIdBySongId(songID) ?: -1
+        val albumID: Int = db?.getAlbumIdBySongId(songID) ?: -1
         val songArtist: String = db?.getArtistBySongId(songID) ?: ""
-        val songAlbum: String = db?.getAlbumBySongID(songID) ?: ""
-        val songTitle: String = db?.getTitleBySongID(songID) ?: ""
+        val songAlbum: String = db?.getAlbumBySongId(songID) ?: ""
+        val songTitle: String = db?.getTitleBySongId(songID) ?: ""
         val songDuration: Int = mp?.getCurSongDuration() ?: 100
+        val hasArtwork = db?.songHasArtwork(songID) ?: false
 
         playerArtistLable.text = songArtist
         playerAlbumLable.text = songAlbum
         playerTitleLable.text = songTitle
         seekBar.max = songDuration
+        if(hasArtwork){
+            val albumArtUri = db?.getArtworkUriBySongId(songID)
+            if(albumArtUri != null){
+                playerArtwork.setImageURI(albumArtUri)
+            }
+        }
     }
 
     private fun updatePlayButton() {
