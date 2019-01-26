@@ -13,6 +13,9 @@ import net.chilltec.tempo.DataTypes.Song
 import okhttp3.*
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files.isDirectory
+
+
 
 class DatabaseService : Service() {
     private val binder = LocalBinder()
@@ -25,6 +28,7 @@ class DatabaseService : Service() {
     private val artistsFileLoc = "artists.db"
     private val albumsFileLoc = "albums.db"
     private val songsFileLoc = "songs.db"
+    private val databaseTimestampFileLoc = "databaseTimestamp.txt"
     private var isInitialized: Boolean = false
 
     override fun onCreate(){
@@ -36,41 +40,92 @@ class DatabaseService : Service() {
         val artistsFile = File(filesDir, artistsFileLoc)
         val albumsFile = File(filesDir, albumsFileLoc)
         val songsFile = File(filesDir, songsFileLoc)
+        val databaseTimestampFile = File(filesDir, databaseTimestampFileLoc)
+
+        fun initDatabases(){
+            //Must only be called after database is downloaded.
+            artistsDB = gson.fromJson<Array<Artist>>(artistsFile.readText(), object: TypeToken<Array<Artist>>(){}.type)
+            albumsDB = gson.fromJson<Array<Album>>(albumsFile.readText(), object: TypeToken<Array<Album>>(){}.type)
+            songsDB = gson.fromJson<Array<Song>>(songsFile.readText(), object: TypeToken<Array<Song>>(){}.type)
+            isInitialized = true
+            Log.i(TAG,"Database is initilized")
+        }
 
         //Start Initialize Databases
+        //Check if an update is required
+        //Get timestamp for the local database
+        if(!databaseTimestampFile.exists()){
+            databaseTimestampFile.createNewFile()
+            databaseTimestampFile.writeText("0")
+        }
+        val localTimestamp = databaseTimestampFile.readText()
 
-        val artistURL = "$baseURL/getArtists"
-        val artistRequest = Request.Builder().url(artistURL).build()
-        http.newCall(artistRequest).enqueue(object : Callback {
+        //Get timestamp for the remote database
+        val remoteTimestampUrl = "$baseURL/getLastUpdate"
+        val request = Request.Builder().url(remoteTimestampUrl).build()
+        http.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException){}
             override fun onResponse(call: Call, response: Response){
-                var respString = response.body()?.string()
-                artistsFile.writeText(respString.toString())
-            }
-        })
-        val albumURL = "$baseURL/getAlbums"
-        val albumRequest = Request.Builder().url(albumURL).build()
-        http.newCall(albumRequest).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException){}
-            override fun onResponse(call: Call, response: Response){
-                var respString = response.body()?.string()
-                albumsFile.writeText(respString.toString())
-            }
-        })
-        val songURL = "$baseURL/getSongs"
-        val songRequest = Request.Builder().url(songURL).build()
-        http.newCall(songRequest).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException){}
-            override fun onResponse(call: Call, response: Response){
-                var respString = response.body()?.string()
-                songsFile.writeText(respString.toString())
-            }
-        })
+                var remoteTimestamp = response.body()?.string()
+                //An update is only required if the timestamps do not match
+                var needsUpdate = remoteTimestamp != localTimestamp
 
-        artistsDB = gson.fromJson<Array<Artist>>(artistsFile.readText(), object: TypeToken<Array<Artist>>(){}.type)
-        albumsDB = gson.fromJson<Array<Album>>(albumsFile.readText(), object: TypeToken<Array<Album>>(){}.type)
-        songsDB = gson.fromJson<Array<Song>>(songsFile.readText(), object: TypeToken<Array<Song>>(){}.type)
-        isInitialized = true
+                if(!needsUpdate){
+                    Log.i(TAG, "Local database is up to date")
+                    initDatabases()
+                }
+                else{ //Update the database
+                    Log.i(TAG, "Updating the local database")
+                    val artistURL = "$baseURL/getArtists"
+                    val artistRequest = Request.Builder().url(artistURL).build()
+                    http.newCall(artistRequest).enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException){}
+                        override fun onResponse(call: Call, response: Response){
+                            var respString = response.body()?.string()
+                            artistsFile.writeText(respString.toString())
+                            artistsDB = gson.fromJson<Array<Artist>>(artistsFile.readText(), object: TypeToken<Array<Artist>>(){}.type)
+                        }
+                    })
+                    val albumURL = "$baseURL/getAlbums"
+                    val albumRequest = Request.Builder().url(albumURL).build()
+                    http.newCall(albumRequest).enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException){}
+                        override fun onResponse(call: Call, response: Response){
+                            var respString = response.body()?.string()
+                            albumsFile.writeText(respString.toString())
+                            albumsDB = gson.fromJson<Array<Album>>(albumsFile.readText(), object: TypeToken<Array<Album>>(){}.type)
+                            getAlbumArt()
+                        }
+                    })
+                    val songURL = "$baseURL/getSongs"
+                    val songRequest = Request.Builder().url(songURL).build()
+                    http.newCall(songRequest).enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException){}
+                        override fun onResponse(call: Call, response: Response){
+                            var respString = response.body()?.string()
+                            songsFile.writeText(respString.toString())
+                            songsDB = gson.fromJson<Array<Song>>(songsFile.readText(), object: TypeToken<Array<Song>>(){}.type)
+                            isInitialized = true
+                        }
+                    })
+
+                    val url = "$baseURL/getLastUpdate"
+                    val request = Request.Builder().url(url).build()
+                    http.newCall(request).enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException){}
+                        override fun onResponse(call: Call, response: Response){
+                            var timestamp = response.body()?.string() ?: "0"
+
+                            val databaseTimestampFile = File(filesDir, databaseTimestampFileLoc)
+                            if(!databaseTimestampFile.exists()){
+                                databaseTimestampFile.createNewFile()
+                            }
+                            databaseTimestampFile.writeText(timestamp)
+                        }
+                    })
+                }
+            }
+        })
     }
 
     override fun onBind(intent: Intent): IBinder {
@@ -154,6 +209,31 @@ class DatabaseService : Service() {
     }
     //End info by Song ID
 
+    //Info by Album ID
+    fun albumHasArtwork(id: Int): Boolean{
+        val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
+        val artDir = File(artDirLoc)
+        if(!artDir.exists()){
+            return false
+        }
+        val albumArtLoc = artDirLoc + File.separator + "$id.art"
+        val albumArtFile = File(albumArtLoc)
+        return albumArtFile.exists()
+    }
+
+    fun getAlbumArt(id: Int): File? {
+        //Returns the File object for the album artwork
+        val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
+        val artDir = File(artDirLoc)
+        if(!artDir.exists()){
+            return null
+        }
+        val albumArtLoc = artDirLoc + File.separator + "$id.art"
+        val albumArtFile = File(albumArtLoc)
+        return albumArtFile
+    }
+    //End Info by Album ID
+
     //Search
     fun search(searchTerm: String): Triple<IntArray, IntArray, IntArray>{
         val mutArtistList = mutableListOf<Int>()
@@ -176,5 +256,60 @@ class DatabaseService : Service() {
         val songList = mutSongList.toIntArray()
 
         return Triple(artistList, albumList, songList)
+    }
+
+    //Download images
+    fun getAlbumArt(): Boolean{
+        //Must be called after database is downloaded and initialized
+        //if(!isInitialized) return false
+        val http = OkHttpClient()
+
+        Log.i(TAG, "Downloading album artwork")
+
+        val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
+        val artDir = File(artDirLoc)
+        if(!artDir.exists()){
+            artDir.mkdir()
+        }
+        clearDirctory(artDir)
+
+        val albumIDs: ArrayList<Int> //IDs of only albums that have art
+        for(album in albumsDB){
+            if(album.albumArt == ""){
+                //Log.i(TAG, "${album.album} has no art")
+            }
+            else{
+                //Log.i(TAG, "Downloading art for ${album.album}")
+                val artFileLoc = artDirLoc + File.separator + "${album.id}.art"
+                val artFile = File(artFileLoc)
+                artFile.createNewFile()
+                val url = "$baseURL/getAlbumArtById/${album.id}"
+                val request = Request.Builder().url(url).build()
+                http.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException){}
+                    override fun onResponse(call: Call, response: Response){
+                        var respBytes = response.body()?.bytes() ?: byteArrayOf()
+                        if(respBytes.size == 0){
+                            Log.i(TAG, "ERROR downloading artwork for album id ${album.id}")
+                        }
+                        else{
+                            artFile.writeBytes(respBytes)
+                            Log.i(TAG, "Successfully downloaded artwork for album ${album.id}")
+                        }
+
+                    }
+                })
+            }
+        }
+        return true
+    }
+
+    fun clearDirctory(dir: File){
+        if(dir.isDirectory) {
+            val children = dir.list()
+            for (i in children.indices) {
+                File(dir, children[i]).delete()
+            }
+        }
     }
 }
