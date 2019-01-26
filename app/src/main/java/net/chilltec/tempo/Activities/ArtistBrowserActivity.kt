@@ -9,13 +9,17 @@ import android.os.IBinder
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.GridLayoutManager
+import android.support.v7.widget.PopupMenu
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
+import android.view.MenuInflater
 import android.view.MenuItem
 
 import kotlinx.android.synthetic.main.activity_artist_browser.*
+import kotlinx.android.synthetic.main.album_item.view.*
 import kotlinx.android.synthetic.main.artist_item.view.*
+import kotlinx.android.synthetic.main.song_item.view.*
 import net.chilltec.tempo.*
 import net.chilltec.tempo.Adapters.ArtistBrowserAdapter
 import net.chilltec.tempo.DataTypes.Album
@@ -192,6 +196,28 @@ class ArtistBrowserActivity : AppCompatActivity() {
     fun onLongClickHandler(holder: ArtistBrowserAdapter.ArtistItemHolder): Boolean {
         var artistID: Int = holder.artist_item.artistID.text.toString().toInt()
         Log.i("ArtistBrowserActivity", "Long click artist $artistID")
+
+        //
+        val popup = PopupMenu(this, holder.itemView)
+        val inflater: MenuInflater = popup.menuInflater
+        inflater.inflate(R.menu.artist_item_menu, popup.menu)
+        popup.show()
+        popup.setOnMenuItemClickListener { menuItem ->
+            val id = menuItem.itemId
+            when(id){
+                R.id.artistItemPlayAll -> {
+                    val songID: Int? = db?.getSongIdByArtistId(artistID)
+                    val songList: IntArray? = db?.getSongListByArtistId(artistID)
+                    if(songID != null && songID != -1 && songList != null && songList.isNotEmpty()){
+                        mp?.setSongList(songList)
+                        mp?.playSongById(songID, true)
+                    }
+                }
+            }
+            true
+        }
+        //
+
         return true
     }
 

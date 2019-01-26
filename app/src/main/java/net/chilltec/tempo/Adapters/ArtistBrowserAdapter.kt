@@ -1,8 +1,12 @@
 package net.chilltec.tempo.Adapters
 
 import android.support.constraint.ConstraintLayout
+import android.support.v7.widget.PopupMenu
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.LayoutInflater
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.artist_item.view.*
 import net.chilltec.tempo.Activities.ArtistBrowserActivity
@@ -42,4 +46,5 @@ class ArtistBrowserAdapter(val artistsDB: Array<Artist>,
 
     //Return the size of the dataset, the number of artists
     override fun getItemCount() = artistList.size
+
 }

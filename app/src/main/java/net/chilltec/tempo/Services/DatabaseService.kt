@@ -266,6 +266,24 @@ class DatabaseService : Service() {
     }
     //End Info by Album ID
 
+    //Info by Artist ID
+    fun getSongIdByArtistId(id: Int): Int{
+        //Returns the first song by the given artist, referenced by artist ID
+        for(song in songsDB){
+            if(song.artist == id) return song.id
+        }
+        return -1 //No song found
+    }
+    fun getSongListByArtistId(id: Int): IntArray{
+        //Returns the list of all song IDs by a given artist, referenced by artist ID
+        var songList = mutableListOf<Int>()
+        for(song in songsDB){
+            if(song.artist == id) songList.add(song.id)
+        }
+        return songList.toIntArray()
+    }
+    //End Info by Artist ID
+
     //Search
     fun search(searchTerm: String): Triple<IntArray, IntArray, IntArray>{
         val mutArtistList = mutableListOf<Int>()
