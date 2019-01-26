@@ -20,6 +20,7 @@ import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Song
 import net.chilltec.tempo.Services.DatabaseService
 import net.chilltec.tempo.Services.MediaService
+import org.jetbrains.anko.image
 import java.io.File
 
 class PlayerActivity : AppCompatActivity() {
@@ -215,6 +216,9 @@ class PlayerActivity : AppCompatActivity() {
             if(albumArtUri != null){
                 playerArtwork.setImageURI(albumArtUri)
             }
+        }
+        else{
+            playerArtwork.setImageResource(R.drawable.ic_album_black_24dp)
         }
     }
 

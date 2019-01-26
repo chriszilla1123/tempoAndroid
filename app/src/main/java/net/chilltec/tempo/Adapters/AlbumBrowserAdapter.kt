@@ -42,7 +42,7 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
         holder.album_item.albumArtistLable.text = artistsDB[artistIndex].artist
 
         if(albumsDB[albumIndex].albumArt != ""){
-            Log.i(TAG, "Displaying album art: $albumID, info: ${albumsDB[albumIndex].albumArt}")
+            //Log.i(TAG, "Displaying album art: $albumID, info: ${albumsDB[albumIndex].albumArt}")
             val filesDir = context.filesDir
             val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
             val artDir = File(artDirLoc)
@@ -56,8 +56,9 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
             }
         }
         else{
-            Log.i(TAG, "Failed to find album art: $albumID, info: ${albumsDB[albumIndex].albumArt}")
+            //Log.i(TAG, "Failed to find album art: $albumID, info: ${albumsDB[albumIndex].albumArt}")
             //Default image will be displayed.
+            holder.album_item.albumArt.setImageResource(R.drawable.ic_album_black_24dp)
         }
 
         holder.album_item.setOnClickListener{
