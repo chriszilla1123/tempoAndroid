@@ -100,6 +100,11 @@ class MediaService : Service() {
         toast("Playing song id $songID")
         Log.i(TAG, "Playing song id $songID")
 
+        if(songID <= 0) {
+            Log.i(TAG, "ERROR: Attempted to play invalid song id: $songID")
+            return
+        }
+
         var songSetIndex: Int = songSet.indexOf(songID)
         if(songSetIndex == -1){
             nextSong = -1
@@ -257,7 +262,7 @@ class MediaService : Service() {
             return
         }
 
-        var curDuration = mp.duration
+        var curDuration = getCurrentDuration()
         Log.i(TAG, "Attempting to set progress")
         if(time < 0 || time > curDuration) return
         if(curDuration == -1) return
@@ -279,9 +284,20 @@ class MediaService : Service() {
         return curSong
     }
 
-    fun getCurSongDuration(): Int{
-        //Returns the current songs' integer duration in milliseconds
-        return mp.duration
+    fun getCurrentDuration(): Int{
+        //Safely request the current duration in milliseconds, with state and error checking.
+        //Return -1 on error
+        //This is the only place mp.duration or mp.getDuration should be called
+        var duration: Int = -1
+        try {
+            duration = mp.duration
+        }
+        catch(e: IllegalStateException){
+            Log.i(TAG, "Illegal State Exception caught")
+            Log.i(TAG, e.localizedMessage)
+        }
+
+        return duration
     }
 
     fun isPlaying(): Boolean{
@@ -294,7 +310,7 @@ class MediaService : Service() {
 
         //Restart song if more than 2 seconds into it
         if(mp.currentPosition > 2000){
-            if(mp.duration != -1){
+            if(getCurrentDuration() != -1){
                 mp.seekTo(1)
             }
             else{
@@ -303,6 +319,7 @@ class MediaService : Service() {
         }
         else{
             //Otherwise go to previous song
+            mp.reset()
             val curIndex = songSet.indexOf(curSong)
             var toPlay = -1
             if(curIndex >= 1) toPlay = songSet[curIndex - 1]
@@ -320,7 +337,7 @@ class MediaService : Service() {
     fun control_play(){
         Log.i(TAG, "Control_Play")
         if(mp.isPlaying) mp.pause()
-        else mp.start()
+        else mp.prepare()
     }
 
     fun control_next(){
@@ -328,6 +345,7 @@ class MediaService : Service() {
 
         var toPlay: Int = nextSong
         var songSetIndex: Int = songSet.indexOf(toPlay)
+        mp.reset()
 
         if(toPlay != -1){
             if(songSet.size > (songSetIndex + 1)){

@@ -1,7 +1,6 @@
 package net.chilltec.tempo.Activities
 
 import android.content.*
-import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -20,8 +19,6 @@ import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Song
 import net.chilltec.tempo.Services.DatabaseService
 import net.chilltec.tempo.Services.MediaService
-import org.jetbrains.anko.image
-import java.io.File
 
 class PlayerActivity : AppCompatActivity() {
     private lateinit var artistsDB: Array<Artist>
@@ -204,7 +201,7 @@ class PlayerActivity : AppCompatActivity() {
         val songArtist: String = db?.getArtistBySongId(songID) ?: ""
         val songAlbum: String = db?.getAlbumBySongId(songID) ?: ""
         val songTitle: String = db?.getTitleBySongId(songID) ?: ""
-        val songDuration: Int = mp?.getCurSongDuration() ?: 100
+        val songDuration: Int = mp?.getCurrentDuration() ?: 100
         val hasArtwork = db?.songHasArtwork(songID) ?: false
 
         playerArtistLable.text = songArtist
