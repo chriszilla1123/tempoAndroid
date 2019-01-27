@@ -97,6 +97,7 @@ class MediaService : Service() {
         //Pre-loads the next song, if applicable
         //If force is true, the cacheQueue will be cleared and songID pushed to the front
         //  This is only used when a user directly requests a song by clicking.
+
         toast("Playing song id $songID")
         Log.i(TAG, "Playing song id $songID")
 
@@ -210,21 +211,24 @@ class MediaService : Service() {
     }
 
     fun clearCache(){
-        val cacheDir = cacheDir
-        val curFile = "$curSong.song"
-        val nextFile = "$nextSong.song"
-        var deletedFiles: Int = 0
-        var sizeInBytes: Long = 0
-        cacheDir.walkTopDown().forEach{
-            if(it.name != curFile && it.name != nextFile){
-                sizeInBytes += it.length()
-                it.delete()
-                deletedFiles++
+        //Deletes all song files that have been downloaded to cache
+        Thread(Runnable {
+            val cacheDir = cacheDir
+            val curFile = "$curSong.song"
+            val nextFile = "$nextSong.song"
+            var deletedFiles: Int = 0
+            var sizeInBytes: Long = 0
+            cacheDir.walkTopDown().forEach{
+                if(it.name != curFile && it.name != nextFile){
+                    sizeInBytes += it.length()
+                    it.delete()
+                    deletedFiles++
+                }
             }
-        }
-        var sizeInMb: Int = (sizeInBytes.toDouble() / 1000000.toDouble()).roundToInt()
-        toast("Cleared ${sizeInMb}MB from $deletedFiles files in cache")
-        Log.i(TAG, "Cleared ${sizeInMb}MB from $deletedFiles files in cache")
+            var sizeInMb: Int = (sizeInBytes.toDouble() / 1000000.toDouble()).roundToInt()
+            toast("Cleared ${sizeInMb}MB from $deletedFiles files in cache")
+            Log.i(TAG, "Cleared ${sizeInMb}MB from $deletedFiles files in cache")
+        }).start()
     }
 
     fun updateConnectionStatus(){

@@ -33,7 +33,7 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
     }
 
     override fun onBindViewHolder(holder: AlbumItemHolder, position: Int) {
-        var albumIndex = albumList[position] - 1
+        val albumIndex = albumList[position] - 1
         val artistIndex = albumsDB[albumIndex].artist - 1
         val albumID = albumsDB[albumIndex].id
 
@@ -41,25 +41,27 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
         holder.album_item.albumLable.text = albumsDB[albumIndex].album
         holder.album_item.albumArtistLable.text = artistsDB[artistIndex].artist
 
-        if(albumsDB[albumIndex].albumArt != ""){
-            //Log.i(TAG, "Displaying album art: $albumID, info: ${albumsDB[albumIndex].albumArt}")
-            val filesDir = context.filesDir
-            val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
-            val artDir = File(artDirLoc)
-            if(artDir.exists()){
-                val albumArtLoc = artDirLoc + File.separator + "$albumID.art"
-                val albumArtFile = File(albumArtLoc)
-                val albumArtUri = Uri.fromFile(albumArtFile)
-                if(albumArtFile.exists()) {
-                    holder.album_item.albumArt.setImageURI(albumArtUri)
+        Thread(Runnable {
+            if(albumsDB[albumIndex].albumArt != ""){
+                //Log.i(TAG, "Displaying album art: $albumID, info: ${albumsDB[albumIndex].albumArt}")
+                val filesDir = context.filesDir
+                val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
+                val artDir = File(artDirLoc)
+                if(artDir.exists()){
+                    val albumArtLoc = artDirLoc + File.separator + "$albumID.art"
+                    val albumArtFile = File(albumArtLoc)
+                    val albumArtUri = Uri.fromFile(albumArtFile)
+                    if(albumArtFile.exists()) {
+                        holder.album_item.albumArt.setImageURI(albumArtUri)
+                    }
                 }
             }
-        }
-        else{
-            //Log.i(TAG, "Failed to find album art: $albumID, info: ${albumsDB[albumIndex].albumArt}")
-            //Default image will be displayed.
-            holder.album_item.albumArt.setImageResource(R.drawable.ic_album_black_24dp)
-        }
+            else{
+                //Log.i(TAG, "Failed to find album art: $albumID, info: ${albumsDB[albumIndex].albumArt}")
+                //Default image will be displayed.
+                holder.album_item.albumArt.setImageResource(R.drawable.ic_album_black_24dp)
+            }
+        }).start()
 
         holder.album_item.setOnClickListener{
             //Pass the holder to the activity to handle to onClick event

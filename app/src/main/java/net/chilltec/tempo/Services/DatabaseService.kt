@@ -44,12 +44,14 @@ class DatabaseService : Service() {
         val databaseTimestampFile = File(filesDir, databaseTimestampFileLoc)
 
         fun initDatabases(){
-            //Must only be called after database is downloaded.
-            artistsDB = gson.fromJson<Array<Artist>>(artistsFile.readText(), object: TypeToken<Array<Artist>>(){}.type)
-            albumsDB = gson.fromJson<Array<Album>>(albumsFile.readText(), object: TypeToken<Array<Album>>(){}.type)
-            songsDB = gson.fromJson<Array<Song>>(songsFile.readText(), object: TypeToken<Array<Song>>(){}.type)
-            isInitialized = true
-            Log.i(TAG,"Database is initilized")
+            Thread(Runnable {
+                //Must only be called after database is downloaded.
+                artistsDB = gson.fromJson<Array<Artist>>(artistsFile.readText(), object: TypeToken<Array<Artist>>(){}.type)
+                albumsDB = gson.fromJson<Array<Album>>(albumsFile.readText(), object: TypeToken<Array<Album>>(){}.type)
+                songsDB = gson.fromJson<Array<Song>>(songsFile.readText(), object: TypeToken<Array<Song>>(){}.type)
+                isInitialized = true
+                Log.i(TAG,"Database is initilized")
+            }).start()
         }
 
         //Start Initialize Databases
@@ -218,6 +220,9 @@ class DatabaseService : Service() {
     }
     fun songHasArtwork(id: Int): Boolean{
         //Returns true if the given song's album has artwork
+        Thread(Runnable {
+
+        }).start()
         val albumID = songsDB[id-1].album
         val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
         val artDir = File(artDirLoc)

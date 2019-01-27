@@ -178,21 +178,23 @@ class AlbumBrowserActivity : AppCompatActivity() {
 
     fun onClickHandler(holder: AlbumBrowserAdapter.AlbumItemHolder){
         //Start the SongBrowser with songs from the clicked album
-        var albumID: Int = holder.album_item.albumID.text.toString().toInt()
-        var albumName: String = holder.album_item.albumLable.text.toString()
-        var artistName: String = holder.album_item.albumArtistLable.text.toString()
-        var songsMutableList = mutableListOf<Int>()
-        for(song in songsDB){
-            if(song.album == albumID){
-                songsMutableList.add(song.id)
+        Thread(Runnable{
+            val albumID: Int = holder.album_item.albumID.text.toString().toInt()
+            val albumName: String = holder.album_item.albumLable.text.toString()
+            val artistName: String = holder.album_item.albumArtistLable.text.toString()
+            val songsMutableList = mutableListOf<Int>()
+            for(song in songsDB){
+                if(song.album == albumID){
+                    songsMutableList.add(song.id)
+                }
             }
-        }
-        var songsList: IntArray = songsMutableList.toIntArray()
-        val intent = Intent(this, SongBrowserActivity::class.java)
-        intent.putExtra("songList", songsList)
-        intent.putExtra("title", albumName)
-        intent.putExtra("subtitle", artistName)
-        startActivity(intent)
+            val songsList: IntArray = songsMutableList.toIntArray()
+            val intent = Intent(this, SongBrowserActivity::class.java)
+            intent.putExtra("songList", songsList)
+            intent.putExtra("title", albumName)
+            intent.putExtra("subtitle", artistName)
+            startActivity(intent)
+        }).start()
     }
 
     fun onLongClickHandler(holder: AlbumBrowserAdapter.AlbumItemHolder): Boolean{
