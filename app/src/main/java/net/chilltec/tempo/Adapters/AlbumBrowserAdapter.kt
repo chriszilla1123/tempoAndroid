@@ -52,7 +52,12 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
                     val albumArtFile = File(albumArtLoc)
                     val albumArtUri = Uri.fromFile(albumArtFile)
                     if(albumArtFile.exists()) {
-                        holder.album_item.albumArt.setImageURI(albumArtUri)
+                        if(holder.layoutPosition == position) {
+                            holder.album_item.albumArt.post{
+                                //Sets the image from the main thread.
+                                holder.album_item.albumArt.setImageURI(albumArtUri)
+                            }
+                        }
                     }
                 }
             }

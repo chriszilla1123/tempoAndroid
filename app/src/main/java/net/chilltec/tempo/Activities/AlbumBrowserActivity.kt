@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
@@ -24,6 +25,7 @@ import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Song
 import net.chilltec.tempo.Services.DatabaseService
 import net.chilltec.tempo.Services.MediaService
+import java.io.File
 
 class AlbumBrowserActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView

@@ -2,19 +2,20 @@ package net.chilltec.tempo.Services
 
 import android.app.Service
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.IBinder
 import android.os.*
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import id.zelory.compressor.Compressor
 import net.chilltec.tempo.DataTypes.Album
 import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Song
 import okhttp3.*
 import java.io.File
 import java.io.IOException
-import java.nio.file.Files.isDirectory
 
 
 
@@ -329,9 +330,11 @@ class DatabaseService : Service() {
         clearDirctory(artDir)
 
         val albumIDs: ArrayList<Int> //IDs of only albums that have art
+        var numDownloaded = 0
         for(album in albumsDB){
             if(album.albumArt == ""){
-                //Log.i(TAG, "${album.album} has no art")
+                //Log.i(TAG, "${album.album} has no art"
+                numDownloaded++
             }
             else{
                 //Log.i(TAG, "Downloading art for ${album.album}")
@@ -341,15 +344,21 @@ class DatabaseService : Service() {
                 val url = "$baseURL/getAlbumArtById/${album.id}"
                 val request = Request.Builder().url(url).build()
                 http.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException){}
+                    override fun onFailure(call: Call, e: IOException){ numDownloaded++ }
                     override fun onResponse(call: Call, response: Response){
                         var respBytes = response.body()?.bytes() ?: byteArrayOf()
                         if(respBytes.size == 0){
                             Log.i(TAG, "ERROR downloading artwork for album id ${album.id}")
+                            artFile.delete()
                         }
                         else{
                             artFile.writeBytes(respBytes)
                             Log.i(TAG, "Successfully downloaded artwork for album ${album.id}")
+                        }
+                        numDownloaded++
+
+                        if(numDownloaded == numAlbums()){
+                            //compressArtwork()
                         }
 
                     }
@@ -359,11 +368,33 @@ class DatabaseService : Service() {
         return true
     }
 
+    fun compressArtwork(){
+        Log.i(TAG, "Compressing Album Artwork")
+        val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
+        val artDir = File(artDirLoc)
+        artDir.listFiles().forEach {
+            Log.i(TAG, "test: ${it.name}")
+        }
+        for(file in artDir.listFiles()){
+            if(file.extension == "art"){
+                Log.i(TAG, "File name: ${file.name}")
+                val lowFile = Compressor(this)
+                    .setMaxWidth(400)
+                    .setMaxHeight(400)
+                    .setQuality(75)
+                    .setDestinationDirectoryPath(artDirLoc)
+                    .setCompressFormat(Bitmap.CompressFormat.PNG)
+                    .compressToFile(file)
+            }
+        }
+    }
+
     fun clearDirctory(dir: File){
         if(dir.isDirectory) {
             val children = dir.list()
             for (i in children.indices) {
-                File(dir, children[i]).delete()
+                val name = dir.absolutePath + File.separator + children[i]
+                File(name).delete()
             }
         }
     }

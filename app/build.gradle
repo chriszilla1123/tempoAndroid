@@ -43,4 +43,7 @@ dependencies {
     //settings
     implementation 'com.android.support:preference-v7:28.0.0'
     implementation 'android.arch.navigation:navigation-fragment:1.0.0-alpha09'
+
+    //Image compression
+    implementation 'id.zelory:compressor:2.1.0'
 }

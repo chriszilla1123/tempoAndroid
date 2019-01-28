@@ -6,29 +6,42 @@
                                              android:clickable="false"
                                              android:layout_height="wrap_content">
 
-    <TextView
-            android:text="#"
-            android:layout_width="0dp"
-            android:layout_height="0dp" android:id="@+id/albumID"
-            android:textAppearance="@style/TextAppearance.AppCompat"/>
     <ImageView
             android:layout_width="0dp"
             android:layout_height="0dp" app:srcCompat="@drawable/ic_album_black_24dp"
             android:id="@+id/albumArt"
-            app:layout_constraintDimensionRatio="1:1" android:layout_marginStart="8dp"
-            app:layout_constraintStart_toStartOf="parent" android:layout_marginEnd="8dp"
-            app:layout_constraintEnd_toEndOf="parent" android:layout_marginTop="8dp"
-            app:layout_constraintTop_toTopOf="parent" android:layout_marginBottom="8dp"
+            app:layout_constraintDimensionRatio="1:1" android:layout_marginStart="4dp"
+            app:layout_constraintStart_toStartOf="parent" android:layout_marginEnd="4dp"
+            app:layout_constraintEnd_toEndOf="parent" android:layout_marginTop="4dp"
+            app:layout_constraintTop_toTopOf="parent" android:layout_marginBottom="4dp"
             app:layout_constraintBottom_toBottomOf="parent"/>
+    <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            app:layout_constraintBottom_toBottomOf="@+id/albumArt" app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:background="#80000000" android:layout_marginStart="4dp" android:layout_marginEnd="4dp"
+            android:paddingTop="4dp" android:paddingBottom="4dp"
+            android:id="@+id/tableRow">
+    </TableRow>
     <TextView
             android:text="Album"
             android:layout_width="wrap_content"
-            android:layout_height="40dp" android:id="@+id/albumLable"
+            android:layout_height="0dp" android:id="@+id/albumLable"
             android:textAppearance="@style/TextAppearance.AppCompat"
             android:textSize="16sp"
             app:layout_constraintDimensionRatio="" android:layout_marginStart="8dp"
-            app:layout_constraintStart_toStartOf="parent" android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintStart_toStartOf="parent" android:layout_marginBottom="4dp"
+            app:layout_constraintBottom_toBottomOf="@+id/tableRow" android:alpha="1"
+            app:layout_constraintTop_toTopOf="@+id/tableRow" android:layout_marginTop="4dp"/>
+    <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:id="@+id/imageButton"
+            app:layout_constraintBottom_toBottomOf="@+id/tableRow" app:layout_constraintTop_toTopOf="@+id/tableRow"
+            android:layout_marginTop="4dp" android:layout_marginBottom="4dp"
+            app:layout_constraintEnd_toEndOf="@+id/tableRow" android:layout_marginEnd="8dp"
+            android:background="@drawable/ic_more_vert_black_24dp"/>
     <TextView
             android:text="Artist"
             android:layout_width="0dp"
@@ -37,4 +50,9 @@
             android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="parent" android:layout_marginBottom="8dp"
             tools:layout_editor_absoluteX="315dp" android:visibility="invisible"/>
+    <TextView
+            android:text="#"
+            android:layout_width="0dp"
+            android:layout_height="0dp" android:id="@+id/albumID"
+            android:textAppearance="@style/TextAppearance.AppCompat"/>
 </android.support.constraint.ConstraintLayout>
