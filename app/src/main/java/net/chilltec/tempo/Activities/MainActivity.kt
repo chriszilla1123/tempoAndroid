@@ -14,6 +14,9 @@ import net.chilltec.tempo.R
 import net.chilltec.tempo.R.id.*
 import net.chilltec.tempo.Services.DatabaseService
 import net.chilltec.tempo.Services.MediaService
+import android.os.StrictMode
+import net.chilltec.tempo.BuildConfig
+
 
 class MainActivity : AppCompatActivity()  {
 
@@ -126,6 +129,26 @@ class MainActivity : AppCompatActivity()  {
             true
         }
         //End Init NavDrawer onClick listeners
+
+        //Enable strict mode
+        if(BuildConfig.DEBUG){
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy.Builder()
+                    .detectDiskReads()
+                    .detectDiskWrites()
+                    .detectNetwork()   // or .detectAll() for all detectable problems
+                    .penaltyLog()
+                    .build()
+            )
+            StrictMode.setVmPolicy(
+                StrictMode.VmPolicy.Builder()
+                    .detectLeakedSqlLiteObjects()
+                    .detectLeakedClosableObjects()
+                    .penaltyLog()
+                    .penaltyDeath()
+                    .build()
+            )
+        }
     }
 
     override fun onDestroy(){

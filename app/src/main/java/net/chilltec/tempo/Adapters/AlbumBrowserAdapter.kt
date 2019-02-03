@@ -6,6 +6,7 @@ import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.album_item.view.*
 import net.chilltec.tempo.Activities.AlbumBrowserActivity
 import net.chilltec.tempo.DataTypes.Album
@@ -18,6 +19,7 @@ import java.io.File
 class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
                           val albumsDB: Array<Album>,
                           val albumList: IntArray,
+                          val albumArtList: List<File?>, //albumArtList may be empty, check before using.
                           val context: AlbumBrowserActivity
 ): RecyclerView.Adapter<AlbumBrowserAdapter.AlbumItemHolder>(){
 
@@ -42,6 +44,17 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
         holder.album_item.albumArtistLable.text = artistsDB[artistIndex].artist
 
         Thread(Runnable {
+
+        }).start()
+        if(albumArtList.isNotEmpty()){
+            //holder.album_item.albumArt.setImageURI(Uri.fromFile(albumArtList[albumIndex]))
+            val file = albumArtList[albumIndex]
+            if(file != null){
+                Picasso.get().load(file).fit().centerCrop().into(holder.album_item.albumArt)
+            }
+        }
+
+        /*Thread(Runnable {
             if(albumsDB[albumIndex].albumArt != ""){
                 //Log.i(TAG, "Displaying album art: $albumID, info: ${albumsDB[albumIndex].albumArt}")
                 val filesDir = context.filesDir
@@ -53,10 +66,11 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
                     val albumArtUri = Uri.fromFile(albumArtFile)
                     if(albumArtFile.exists()) {
                         if(holder.layoutPosition == position) {
-                            holder.album_item.albumArt.post{
+                            /*holder.album_item.albumArt.post{
                                 //Sets the image from the main thread.
-                                holder.album_item.albumArt.setImageURI(albumArtUri)
-                            }
+
+                            }*/
+                            holder.album_item.albumArt.setImageURI(albumArtUri)
                         }
                     }
                 }
@@ -66,7 +80,7 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
                 //Default image will be displayed.
                 holder.album_item.albumArt.setImageResource(R.drawable.ic_album_black_24dp)
             }
-        }).start()
+        }).start()*/
 
         holder.album_item.setOnClickListener{
             //Pass the holder to the activity to handle to onClick event

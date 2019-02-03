@@ -34,6 +34,7 @@ class AlbumBrowserActivity : AppCompatActivity() {
     private lateinit var artistsDB: Array<Artist>
     private lateinit var albumsDB: Array<Album>
     private lateinit var songsDB: Array<Song>
+    private lateinit var albumArtList: List<File?>
 
     private val ref = this
 
@@ -42,6 +43,7 @@ class AlbumBrowserActivity : AppCompatActivity() {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as DatabaseService.LocalBinder
             db = binder.getService()
+            albumArtList = db?.getAlbumartList() ?: listOf<File>() //May be empty! check before using
             loadAdapter() //Must be called after the database mpConnection is established
         }
 
@@ -142,12 +144,14 @@ class AlbumBrowserActivity : AppCompatActivity() {
         }
 
         //viewManager = LinearLayoutManager(this)
-        viewManager = GridLayoutManager(this, 2)
-        viewAdapter = AlbumBrowserAdapter(artistsDB, albumsDB, albumList, ref)
+        val numColumns = 2
+        viewManager = GridLayoutManager(this, numColumns)
+        viewAdapter = AlbumBrowserAdapter(artistsDB, albumsDB, albumList, albumArtList, ref)
 
         recyclerView = AlbumBrowser.apply{
             //Only if changes do not effect size
             setHasFixedSize(true)
+            setItemViewCacheSize(80)
 
             //Linear layout
             layoutManager = viewManager
