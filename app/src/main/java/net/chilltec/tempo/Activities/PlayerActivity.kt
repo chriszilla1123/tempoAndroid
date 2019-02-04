@@ -19,12 +19,14 @@ import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Song
 import net.chilltec.tempo.Services.DatabaseService
 import net.chilltec.tempo.Services.MediaService
+import java.util.concurrent.TimeUnit
 
 class PlayerActivity : AppCompatActivity() {
     private lateinit var artistsDB: Array<Artist>
     private lateinit var albumsDB: Array<Album>
     private lateinit var songsDB: Array<Song>
-    val TAG = "PlayerActivityTag"
+    private var isActive: Boolean = false
+    val TAG = "PlayerActivity"
 
     private var db: DatabaseService? = null
     private val dbConnection = object : ServiceConnection {
@@ -68,6 +70,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        isActive = true
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player)
         setSupportActionBar(playerToolbar)
@@ -88,7 +91,7 @@ class PlayerActivity : AppCompatActivity() {
         bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
 
         //Initialize the seekbar
-        initSeekbar()
+        //initSeekbar() //moved to updateTimer(), which is called once per second.
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -162,6 +165,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
+        isActive = false
         super.onPause()
         unregisterReceiver(songUpdateReceiver)
         unbindService(dbConnection)
@@ -170,6 +174,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     override fun onResume() {
+        isActive = true
         super.onResume()
         registerReceiver(songUpdateReceiver, IntentFilter("BROADCAST_SONG_CHANGED"))
         //Bind the MediaService
@@ -178,6 +183,14 @@ class PlayerActivity : AppCompatActivity() {
         //Bind DatabaseService
         var dbIntent = Intent(this, DatabaseService::class.java)
         bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
+
+        //Update song times in another thread
+        Thread(Runnable {
+            while(isActive){
+                updateTimer()
+                Thread.sleep(1000)
+            }
+        }).start()
     }
 
     fun onClick_playButton(v: View) {
@@ -194,7 +207,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun updateSongLables() {
-        //Make this update when a new song starts.
+        //Called whenever the song is updated
         val songID: Int = mp?.getCurSong() ?: -1
         val artistID: Int = db?.getArtistIdBySongId(songID) ?: -1
         val albumID: Int = db?.getAlbumIdBySongId(songID) ?: -1
@@ -207,7 +220,19 @@ class PlayerActivity : AppCompatActivity() {
         playerArtistLable.text = songArtist
         playerAlbumLable.text = songAlbum
         playerTitleLable.text = songTitle
-        seekBar.max = songDuration
+
+        val songDurationInSeconds = songDuration / 1000 //Convert from milliseconds
+        val durationDisplayMinutes = (songDurationInSeconds / 60).toString()
+        val durationDisplaySeconds = (songDurationInSeconds % 60).toString()
+        val durationDisplay: String //Prepend 0, if necessary
+        if(durationDisplaySeconds.length == 1){
+            durationDisplay = "$durationDisplayMinutes:0$durationDisplaySeconds"
+        }
+        else durationDisplay ="$durationDisplayMinutes:$durationDisplaySeconds"
+
+        seekBar.max = songDurationInSeconds
+        playerMaxTimeLable.text = durationDisplay
+
         if(hasArtwork){
             val albumArtUri = db?.getArtworkUriBySongId(songID)
             if(albumArtUri != null){
@@ -217,6 +242,8 @@ class PlayerActivity : AppCompatActivity() {
         else{
             playerArtwork.setImageResource(R.drawable.ic_album_black_24dp)
         }
+
+        updatePlayButton()
     }
 
     private fun updatePlayButton() {
@@ -227,7 +254,32 @@ class PlayerActivity : AppCompatActivity() {
         else buttonPlay.text = "PAUSE"
     }
 
+    private fun updateTimer() {
+        //If a song is currently playing, updates the playerCurTimeLable
+        //Should run in a loop running on its own thread.
+        val curTimeInMillis: Int = mp?.getProgress() ?: 0
+        val curTimeInSeconds: Int = curTimeInMillis / 1000
+        val curDisplayMinutes: String = (curTimeInSeconds / 60).toString()
+        var curDisplaySeconds: String = (curTimeInSeconds % 60).toString()
+        if(curDisplaySeconds.length == 1) {
+            //prepend a 0 if the seconds is less than 10
+            curDisplaySeconds = "0$curDisplaySeconds"
+        }
+        val curSongLable = "$curDisplayMinutes:$curDisplaySeconds"
+        Log.i(TAG, "Cur time: $curSongLable")
+        playerCurTimeLable.post {
+            playerCurTimeLable.text = curSongLable
+        }
+
+        //Update the seekbar
+        seekBar.post {
+            //seekBar.max is set to the duration, in seconds
+            seekBar.progress = curTimeInSeconds
+        }
+    }
+
     private fun initSeekbar() {
+        //Move to updateTimer
         var handler = Handler()
         lateinit var updateProgress: Runnable
 

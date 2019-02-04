@@ -4,19 +4,16 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
 import android.support.v4.view.GravityCompat
 import android.support.v7.widget.GridLayoutManager
-import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import kotlinx.android.synthetic.main.activity_album_browser.*
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.album_item.view.*
 import net.chilltec.tempo.*
 import net.chilltec.tempo.Adapters.AlbumBrowserAdapter
@@ -43,7 +40,7 @@ class AlbumBrowserActivity : AppCompatActivity() {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as DatabaseService.LocalBinder
             db = binder.getService()
-            albumArtList = db?.getAlbumartList() ?: listOf<File>() //May be empty! check before using
+            albumArtList = db?.getAlbumArtList() ?: listOf<File>() //May be empty! check before using
             loadAdapter() //Must be called after the database mpConnection is established
         }
 

@@ -57,11 +57,13 @@
         <SeekBar
                 android:layout_width="0dp"
                 android:layout_height="29dp"
-                android:id="@+id/seekBar" app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
-                app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
+                android:id="@+id/seekBar"
                 style="@android:style/Widget.Material.SeekBar"
-                app:layout_constraintHorizontal_bias="1.0" android:layout_marginBottom="8dp"
-                app:layout_constraintBottom_toTopOf="@+id/buttonPlay"/>
+                android:layout_marginBottom="8dp"
+                app:layout_constraintBottom_toTopOf="@+id/buttonPlay"
+                app:layout_constraintStart_toEndOf="@+id/playerCurTimeLable"
+                android:layout_marginStart="4dp" app:layout_constraintEnd_toStartOf="@+id/playerMaxTimeLable"
+                android:layout_marginEnd="8dp"/>
         <Button
                 android:text="Prev"
                 android:layout_width="0dp"
@@ -95,6 +97,21 @@
                 android:layout_marginEnd="16dp" android:layout_marginBottom="8dp"
                 app:layout_constraintBottom_toBottomOf="parent" android:onClick="onClick_nextButton"
                 android:focusableInTouchMode="false"/>
+        <TextView
+                android:text="0:00"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/playerCurTimeLable"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginStart="4dp"
+                app:layout_constraintTop_toTopOf="@+id/seekBar" app:layout_constraintBottom_toBottomOf="@+id/seekBar"/>
+        <TextView
+                android:text="0:00"
+                android:layout_width="wrap_content"
+                android:layout_height="20dp"
+                android:id="@+id/playerMaxTimeLable"
+                app:layout_constraintTop_toTopOf="@+id/seekBar" app:layout_constraintBottom_toBottomOf="@+id/seekBar"
+                app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="4dp"/>
     </android.support.constraint.ConstraintLayout>
 
     <android.support.design.widget.NavigationView

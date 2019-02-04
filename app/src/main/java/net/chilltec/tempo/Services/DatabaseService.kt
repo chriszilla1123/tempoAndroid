@@ -9,7 +9,6 @@ import android.os.*
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import id.zelory.compressor.Compressor
 import net.chilltec.tempo.DataTypes.Album
 import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Song
@@ -228,9 +227,8 @@ class DatabaseService : Service() {
     }
     fun songHasArtwork(id: Int): Boolean{
         //Returns true if the given song's album has artwork
-        Thread(Runnable {
+        if(id < 1) return false
 
-        }).start()
         val albumID = songsDB[id-1].album
         val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
         val artDir = File(artDirLoc)
@@ -375,7 +373,7 @@ class DatabaseService : Service() {
         return true
     }
 
-    fun getAlbumartList(): List<File?>{
+    fun getAlbumArtList(): List<File?>{
         var albumList = mutableListOf<File?>()
         var artDirLoc = filesDir.absolutePath + File.separator + "artwork"
         for(album in albumsDB){

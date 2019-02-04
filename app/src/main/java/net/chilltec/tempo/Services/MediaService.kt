@@ -2,6 +2,7 @@ package net.chilltec.tempo.Services
 
 import android.app.PendingIntent
 import android.app.Service
+import android.bluetooth.BluetoothDevice
 import android.content.*
 import android.media.AudioAttributes
 import android.media.AudioManager
@@ -12,7 +13,10 @@ import android.support.v4.media.session.MediaButtonReceiver
 import android.support.v4.media.session.MediaSessionCompat
 import android.util.Log
 import android.view.KeyEvent
+import android.widget.Toast
 import okhttp3.*
+import org.jetbrains.anko.activityManager
+import org.jetbrains.anko.runOnUiThread
 import org.jetbrains.anko.toast
 import java.io.File
 import java.io.IOException
@@ -97,59 +101,61 @@ class MediaService : Service() {
         //Pre-loads the next song, if applicable
         //If force is true, the cacheQueue will be cleared and songID pushed to the front
         //  This is only used when a user directly requests a song by clicking.
-
-        toast("Playing song id $songID")
+        //toast("Playing song id $songID")
         Log.i(TAG, "Playing song id $songID")
 
-        if(songID <= 0) {
-            Log.i(TAG, "ERROR: Attempted to play invalid song id: $songID")
-            return
-        }
+        Thread(Runnable {
 
-        var songSetIndex: Int = songSet.indexOf(songID)
-        if(songSetIndex == -1){
-            nextSong = -1
-        }
-        else if(songSet.size > (songSetIndex + 1)){
-            nextSong = songSet[songSetIndex + 1]
-        }
-        else nextSong = -1
-
-        curSong = songID
-        val cacheDir = this.cacheDir
-        val curFileLoc = "$curSong.song"
-        val nextFileLoc = "$nextSong.song"
-        var curFile = File(cacheDir, curFileLoc)
-        var nextFile = File(cacheDir, nextFileLoc)
-
-        //Play curSong, possibliy having to download it first.
-        if(curFile.exists()){
-            Log.i(TAG, "Playing cached song from $curSong.song")
-            try {
-                playerInit()
-                mp.setDataSource(curFile.absolutePath)
-                mp.prepareAsync()
-            } catch (e: Exception) {
-                print(e)
+            if(songID <= 0) {
+                Log.i(TAG, "ERROR: Attempted to play invalid song id: $songID")
+                return@Runnable
             }
-        }
-        else{
-            if(force){
-                cacheQueue.clear()
-                cacheQueue.add(curSong)
-                playInternetSong()
+
+            var songSetIndex: Int = songSet.indexOf(songID)
+            if(songSetIndex == -1){
+                nextSong = -1
             }
-            else if(curSong !in cacheQueue){
-                cacheQueue.add(curSong)
+            else if(songSet.size > (songSetIndex + 1)){
+                nextSong = songSet[songSetIndex + 1]
+            }
+            else nextSong = -1
+
+            curSong = songID
+            val cacheDir = this.cacheDir
+            val curFileLoc = "$curSong.song"
+            val nextFileLoc = "$nextSong.song"
+            var curFile = File(cacheDir, curFileLoc)
+            var nextFile = File(cacheDir, nextFileLoc)
+
+            //Play curSong, possibliy having to download it first.
+            if(curFile.exists()){
+                Log.i(TAG, "Playing cached song from $curSong.song")
+                try {
+                    playerInit()
+                    mp.setDataSource(curFile.absolutePath)
+                    mp.prepareAsync()
+                } catch (e: Exception) {
+                    print(e)
+                }
+            }
+            else{
+                if(force){
+                    cacheQueue.clear()
+                    cacheQueue.add(curSong)
+                    playInternetSong()
+                }
+                else if(curSong !in cacheQueue){
+                    cacheQueue.add(curSong)
+                    if(!curDownloading) playInternetSong()
+                }
+            }
+
+            //Pre-load nextSong, if necessary
+            if(!nextFile.exists()){
+                cacheQueue.add(nextSong)
                 if(!curDownloading) playInternetSong()
             }
-        }
-
-        //Pre-load nextSong, if necessary
-        if(!nextFile.exists()){
-            cacheQueue.add(nextSong)
-            if(!curDownloading) playInternetSong()
-        }
+        }).start()
     }
 
     fun playInternetSong() {
@@ -186,6 +192,10 @@ class MediaService : Service() {
         }
         else{
             Log.i(TAG,"Sending request to download song $songId")
+            this.runOnUiThread {
+                toast("Downloading song...")
+            }
+
             val curRequest = Request.Builder().url(songUrl).build()
             http.newCall(curRequest).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException){}
@@ -219,14 +229,17 @@ class MediaService : Service() {
             var deletedFiles: Int = 0
             var sizeInBytes: Long = 0
             cacheDir.walkTopDown().forEach{
-                if(it.name != curFile && it.name != nextFile){
+                if(it.exists() && it.name != curFile && it.name != nextFile){
                     sizeInBytes += it.length()
                     it.delete()
                     deletedFiles++
                 }
             }
             var sizeInMb: Int = (sizeInBytes.toDouble() / 1000000.toDouble()).roundToInt()
-            toast("Cleared ${sizeInMb}MB from $deletedFiles files in cache")
+
+            this.runOnUiThread {
+                toast("Cleared ${sizeInMb}MB from $deletedFiles files in cache")
+            }
             Log.i(TAG, "Cleared ${sizeInMb}MB from $deletedFiles files in cache")
         }).start()
     }
@@ -277,10 +290,18 @@ class MediaService : Service() {
 
     fun getProgress(): Int{
         //Returns the current song's integer progress in milliseconds.
+        //A return value of 0 indicates the song has just started,
+        // or an error has occured.
         if(isStreaming){
             Log.i(TAG, "Progress cannot be viewed while streaming")
+            return 0
         }
-        return mp.currentPosition
+        try {
+            return mp.currentPosition
+        }
+        catch(e: Exception){
+            return 0
+        }
     }
 
     fun getCurSong(): Int{
@@ -290,9 +311,9 @@ class MediaService : Service() {
 
     fun getCurrentDuration(): Int{
         //Safely request the current duration in milliseconds, with state and error checking.
-        //Return -1 on error
+        //Return 0 on error
         //This is the only place mp.duration or mp.getDuration should be called
-        var duration: Int = -1
+        var duration: Int = 0
         try {
             duration = mp.duration
         }
@@ -330,7 +351,7 @@ class MediaService : Service() {
             if(toPlay != -1){
                 nextSong = curSong
                 curSong = toPlay
-                playSongById(toPlay)
+                playSongById(toPlay, true)
             }
             else{
                 Log.i(TAG, "Hit beginning of queue")
@@ -339,9 +360,18 @@ class MediaService : Service() {
     }
 
     fun control_play(){
+        //Functionality for all play/pause buttons across tempo. Handles both playing
+        //and pausing.
         Log.i(TAG, "Control_Play")
+
         if(mp.isPlaying) mp.pause()
-        else mp.prepare()
+        else mp.start()
+    }
+
+    fun control_pause(){
+        //Handles only pausing, does nothing if the player is already paused.
+        //Used to handle bluetooth / headphone disconnections
+        if(mp.isPlaying) mp.pause()
     }
 
     fun control_next(){
@@ -358,7 +388,7 @@ class MediaService : Service() {
             else{
                 nextSong = -1
             }
-            playSongById(toPlay)
+            playSongById(toPlay, true)
             curSong = toPlay
         }
         else{
@@ -380,7 +410,8 @@ class MediaService : Service() {
     //MediaSession
     private var noiseReceiver = object: BroadcastReceiver(){
         override fun onReceive(context: Context?, intent: Intent?) {
-            Log.i(TAG, "Noise received")
+            Log.i(TAG, "Noise received, pausing playback")
+            control_pause()
         }
     }
     private var msCallback: MediaSessionCompat.Callback = object: MediaSessionCompat.Callback(){
@@ -406,7 +437,6 @@ class MediaService : Service() {
             else if(event?.keyCode == codePrev){
                 control_prev()
             }
-
             return super.onMediaButtonEvent(mediaButtonEvent)
         }
     }
