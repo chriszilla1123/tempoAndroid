@@ -1,24 +1,32 @@
 package net.chilltec.tempo.Activities
 
 import android.content.*
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.support.constraint.ConstraintLayout
+import android.support.v4.content.res.ResourcesCompat
 import android.support.v4.view.GravityCompat
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
 import android.view.View
 import android.widget.SeekBar
 import kotlinx.android.synthetic.main.activity_player.*
+import kotlinx.android.synthetic.main.album_item.*
 import net.chilltec.tempo.*
 import net.chilltec.tempo.DataTypes.Album
 import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Song
 import net.chilltec.tempo.Services.DatabaseService
 import net.chilltec.tempo.Services.MediaService
+import org.jetbrains.anko.sdk27.coroutines.onClick
+import org.jetbrains.anko.sdk27.coroutines.onTouch
 import java.util.concurrent.TimeUnit
 
 class PlayerActivity : AppCompatActivity() {
@@ -90,12 +98,20 @@ class PlayerActivity : AppCompatActivity() {
         var dbIntent = Intent(this, DatabaseService::class.java)
         bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
 
-        //Initialize the seekbar
-        //initSeekbar() //moved to updateTimer(), which is called once per second.
-
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                //Progress is in seconds
                 //toast("Progress is ${seekBar?.progress}%")
+                val displayMinutes = (progress / 60).toString()
+                val displaySeconds = (progress % 60).toString()
+                if(displaySeconds.length == 1){
+                    //prepend 0
+                    playerCurTimeLable.text = "$displayMinutes:0$displaySeconds"
+                }
+                else{
+                    //Don't need to prepend 0
+                    playerCurTimeLable.text = "$displayMinutes:$displaySeconds"
+                }
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -104,7 +120,9 @@ class PlayerActivity : AppCompatActivity() {
 
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 //toast("Progress is ${seekBar?.progress}%")
-                var progress = if (seekBar?.progress != null) seekBar.progress else -1
+                var progress = if (seekBar?.progress != null) {
+                    seekBar.progress * 1000
+                } else -1
                 Log.i(TAG, "Setting time to $progress ")
                 if (progress != -1) mp?.setProgress(progress)
             }
@@ -191,19 +209,43 @@ class PlayerActivity : AppCompatActivity() {
                 Thread.sleep(1000)
             }
         }).start()
-    }
 
-    fun onClick_playButton(v: View) {
-        mp?.control_play()
-        updatePlayButton()
-    }
-
-    fun onClick_nextButton(v: View) {
-        mp?.control_next()
-    }
-
-    fun onClick_prevButton(v: View) { //Set this to the onclick event in the player activity
-        mp?.control_prev()
+        //Control onClickDown and onClickUp listeners
+        val pressedColor = Color.rgb(80, 80, 80)
+        playerButtonPrev.onTouch { v, event ->
+            when(event.action){
+                MotionEvent.ACTION_DOWN -> {
+                    playerButtonPrev.setColorFilter(pressedColor)
+                }
+                MotionEvent.ACTION_UP -> {
+                    playerButtonPrev.clearColorFilter()
+                    mp?.control_prev()
+                }
+            }
+        }
+        playerButtonPlay.onTouch { v, event ->
+            when(event.action){
+                MotionEvent.ACTION_DOWN -> {
+                    playerButtonPlay.setColorFilter(pressedColor)
+                }
+                MotionEvent.ACTION_UP -> {
+                    playerButtonPlay.clearColorFilter()
+                    mp?.control_play()
+                    updatePlayButton()
+                }
+            }
+        }
+        playerButtonNext.onTouch { v, event ->
+            when(event.action){
+                MotionEvent.ACTION_DOWN -> {
+                    playerButtonNext.setColorFilter(pressedColor)
+                }
+                MotionEvent.ACTION_UP -> {
+                    playerButtonNext.clearColorFilter()
+                    mp?.control_next()
+                }
+            }
+        }
     }
 
     private fun updateSongLables() {
@@ -217,8 +259,12 @@ class PlayerActivity : AppCompatActivity() {
         val songDuration: Int = mp?.getCurrentDuration() ?: 100
         val hasArtwork = db?.songHasArtwork(songID) ?: false
 
-        playerArtistLable.text = songArtist
-        playerAlbumLable.text = songAlbum
+        if(songArtist.length == 0) {
+            playerArtistAlbumLable.text = ""
+        }
+        else {
+            playerArtistAlbumLable.text = "$songArtist - $songAlbum"
+        }
         playerTitleLable.text = songTitle
 
         val songDurationInSeconds = songDuration / 1000 //Convert from milliseconds
@@ -250,8 +296,11 @@ class PlayerActivity : AppCompatActivity() {
         //Sets play button text to "PLAY" is song is paused
         //Sets play button to "PAUSE" is song is playing
         var isPlaying = mp?.isPlaying() ?: false
-        if (!isPlaying) buttonPlay.text = "PLAY"
-        else buttonPlay.text = "PAUSE"
+        val playIcon = ResourcesCompat.getDrawable(resources, R.drawable.player_control_play, null)
+        val pauseIcon = ResourcesCompat.getDrawable(resources, R.drawable.player_control_pause, null)
+
+        if (!isPlaying) playerButtonPlay.setImageDrawable(playIcon)
+        else playerButtonPlay.setImageDrawable(pauseIcon)
     }
 
     private fun updateTimer() {
@@ -276,20 +325,6 @@ class PlayerActivity : AppCompatActivity() {
             //seekBar.max is set to the duration, in seconds
             seekBar.progress = curTimeInSeconds
         }
-    }
-
-    private fun initSeekbar() {
-        //Move to updateTimer
-        var handler = Handler()
-        lateinit var updateProgress: Runnable
-
-        updateProgress = Runnable {
-            var curProgress = mp?.getProgress() ?: -1
-            if (curProgress == -1) return@Runnable
-            seekBar.progress = curProgress
-            handler.postDelayed(updateProgress, 1000)
-        }
-        handler.postDelayed(updateProgress, 1000)
     }
 
     //init toolbar
