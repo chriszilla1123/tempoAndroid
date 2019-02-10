@@ -7,4 +7,5 @@
     <color name="foreground_material_light">#37474f</color>
     <color name="primary_text_default_material_dark">#d11010</color>
     <color name="text_color_primary">#ddffffff</color>
+    <color name="darkBackgroundOverImage">#90000000</color>
 </resources>

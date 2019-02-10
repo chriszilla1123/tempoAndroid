@@ -1,21 +1,21 @@
 package net.chilltec.tempo.Services
 
-import android.app.PendingIntent
-import android.app.Service
-import android.bluetooth.BluetoothDevice
+import android.app.*
 import android.content.*
-import android.media.AudioAttributes
-import android.media.AudioManager
-import android.media.MediaPlayer
+import android.graphics.Color
+import android.media.*
 import android.net.ConnectivityManager
 import android.os.*
+import android.support.v4.app.NotificationCompat
+import android.support.v4.content.ContextCompat
+import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaButtonReceiver
 import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import android.view.KeyEvent
-import android.widget.Toast
+import net.chilltec.tempo.R
 import okhttp3.*
-import org.jetbrains.anko.activityManager
 import org.jetbrains.anko.runOnUiThread
 import org.jetbrains.anko.toast
 import java.io.File
@@ -41,9 +41,26 @@ class MediaService : Service() {
     private var cacheQueue: Queue<Int> = LinkedList()
     private var curDownloading: Boolean = false
     private var isStreaming: Boolean = false
+    private var dbIsInit: Boolean = false
+
+    var db: DatabaseService? = null
+    val DBconnection = object: ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as DatabaseService.LocalBinder
+            db = binder.getService()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+        }
+    }
 
     override fun onCreate(){
         Log.i(TAG, "Media Service Created")
+
+        //Bind to DatabaseService
+        var DBintent = Intent(this, DatabaseService::class.java)
+        bindService(DBintent, DBconnection, Context.BIND_AUTO_CREATE)
+
         playerInit()
         noisyReceiverInit()
         msInit()
@@ -105,12 +122,10 @@ class MediaService : Service() {
         Log.i(TAG, "Playing song id $songID")
 
         Thread(Runnable {
-
             if(songID <= 0) {
                 Log.i(TAG, "ERROR: Attempted to play invalid song id: $songID")
                 return@Runnable
             }
-
             var songSetIndex: Int = songSet.indexOf(songID)
             if(songSetIndex == -1){
                 nextSong = -1
@@ -119,7 +134,6 @@ class MediaService : Service() {
                 nextSong = songSet[songSetIndex + 1]
             }
             else nextSong = -1
-
             curSong = songID
             val cacheDir = this.cacheDir
             val curFileLoc = "$curSong.song"
@@ -128,6 +142,7 @@ class MediaService : Service() {
             var nextFile = File(cacheDir, nextFileLoc)
 
             //Play curSong, possibliy having to download it first.
+            setMetadata(songID)
             if(curFile.exists()){
                 Log.i(TAG, "Playing cached song from $curSong.song")
                 try {
@@ -396,6 +411,10 @@ class MediaService : Service() {
         }
     }
 
+    fun getSongList(): IntArray {
+        return this.songSet
+    }
+
     //Administrative Functions
     fun rescanLibrary(){
         Log.i(TAG, "Requesting the server to rescan library files")
@@ -422,20 +441,26 @@ class MediaService : Service() {
             val codePlayPause = KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
             val codeNext = KeyEvent.KEYCODE_MEDIA_NEXT
             val codePrev = KeyEvent.KEYCODE_MEDIA_PREVIOUS
+            val codeStop = KeyEvent.KEYCODE_MEDIA_STOP
             val actionUp = KeyEvent.ACTION_UP
             val actionDown = KeyEvent.ACTION_DOWN
             var event: KeyEvent? = mediaButtonEvent?.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
+            val keyCode = event?.keyCode ?: 0
 
-            if(event?.action == actionDown) return true
+            if(event?.action == actionUp) return true
 
-            if(event?.keyCode == codePlay || event?.keyCode == codePause || event?.keyCode == codePlayPause){
+            if(keyCode == codePlay || keyCode == codePause || keyCode == codePlayPause){
+                Log.i(TAG, "Got here")
                 control_play()
             }
-            else if(event?.keyCode == codeNext){
+            else if(keyCode == codeNext){
                 control_next()
             }
-            else if(event?.keyCode == codePrev){
+            else if(keyCode == codePrev){
                 control_prev()
+            }
+            else if(keyCode == codeStop){
+                control_pause()
             }
             return super.onMediaButtonEvent(mediaButtonEvent)
         }
@@ -454,5 +479,88 @@ class MediaService : Service() {
         mediaButtonIntent.setClass(this, MediaButtonReceiver::class.java)
         var pendingIntent = PendingIntent.getBroadcast(this, 0, mediaButtonIntent, 0)
         ms.setMediaButtonReceiver(pendingIntent)
+    }
+    fun setMetadata(id: Int){
+        //Accepts a SongID and sets media metadata
+        Thread(Runnable{
+            if(!dbIsInit) Thread.sleep(100)
+
+            val metadata = db?.getMetadataBySongId(id)
+            if(metadata != null){
+                ms.setMetadata(metadata)
+                createNotification()
+            }
+        }).start()
+    }
+    private fun createNotification(){
+        //Only called after metadata is set in this.setMetadata(int)
+        val controller = ms.controller
+        val mediaMetadata =  controller.metadata
+        //val description = mediaMetadata.description
+        val ref = this
+
+        val channelID =
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+                createNotificationChannel("a", "Player")
+            }
+            else ""
+
+        val builder = NotificationCompat.Builder(this, channelID).apply {
+            setContentTitle(mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE))
+            setContentText(mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION))
+            //setSubText(description.description)
+            try{
+                setLargeIcon(mediaMetadata.getBitmap(MediaMetadataCompat.METADATA_KEY_ART))
+            }
+            catch(e: Exception){}
+            //Opens the player when the notification is clicked.
+            //setContentIntent(controller.sessionActivity)
+
+            //Stop playback when  the notification is swiped or deleted
+            setDeleteIntent(
+                MediaButtonReceiver.buildMediaButtonPendingIntent(ref,
+                    PlaybackStateCompat.ACTION_STOP)
+            )
+
+            //Enable lockscreen controls
+            setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+
+            //Set app icon
+            setSmallIcon(R.mipmap.ic_launcher_round)
+            color = ContextCompat.getColor(ref, R.color.darkBackgroundOverImage)
+
+            addAction(
+                NotificationCompat.Action(
+                    R.drawable.notification_control_pause,
+                    "Pause",
+                    MediaButtonReceiver.buildMediaButtonPendingIntent(ref,
+                        PlaybackStateCompat.ACTION_PLAY_PAUSE)
+                )
+            )
+
+            setStyle(android.support.v4.media.app.NotificationCompat.MediaStyle()
+                .setMediaSession(ms.sessionToken)
+                .setShowActionsInCompactView(0)
+                .setShowCancelButton(true)
+                .setCancelButtonIntent(
+                    MediaButtonReceiver.buildMediaButtonPendingIntent(ref,
+                        PlaybackStateCompat.ACTION_STOP)
+                )
+            )
+        }
+        startForeground(101, builder.build())
+    }
+    fun createNotificationChannel(channelID: String, channelName: String): String{
+        val channel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel(channelID, channelName,
+                NotificationManager.IMPORTANCE_NONE)
+        } else {
+            return ""
+        }
+        channel.lightColor = Color.BLUE
+        channel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+        val service = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        service.createNotificationChannel(channel)
+        return channelID
     }
 }

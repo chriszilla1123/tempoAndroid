@@ -3,9 +3,12 @@ package net.chilltec.tempo.Services
 import android.app.Service
 import android.content.Intent
 import android.graphics.Bitmap
+import android.media.MediaMetadata
 import android.net.Uri
 import android.os.IBinder
 import android.os.*
+import android.provider.MediaStore
+import android.support.v4.media.MediaMetadataCompat
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -249,6 +252,32 @@ class DatabaseService : Service() {
         val albumArtLoc = artDirLoc + File.separator + "$albumID.art"
         val albumArtFile = File(albumArtLoc)
         return Uri.fromFile(albumArtFile)
+    }
+    fun getMetadataBySongId(id: Int): MediaMetadataCompat{
+        val songTitle = getTitleBySongId(id)
+        val songAlbum = getAlbumBySongId(id)
+        val songArtist = getArtistBySongId(id)
+        val artURI = getArtworkUriBySongId(id)
+
+        val metadata =
+                if(artURI != null){
+                    val artBMP =  MediaStore.Images.Media.getBitmap(this.contentResolver, artURI)
+                    MediaMetadataCompat.Builder()
+                        .putString(MediaMetadataCompat.METADATA_KEY_TITLE, songTitle)
+                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE,
+                            "$songArtist - $songAlbum")
+                        .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, artBMP)
+                        .build()
+                }
+                else {
+                    MediaMetadataCompat.Builder()
+                        .putString(MediaMetadataCompat.METADATA_KEY_TITLE, songTitle)
+                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE,
+                            "$songArtist - $songAlbum")
+                        .build()
+                }
+
+        return metadata
     }
     //End info by Song ID
 

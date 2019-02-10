@@ -46,4 +46,10 @@ dependencies {
 
     //Image loading
     implementation 'com.squareup.picasso:picasso:2.71828'
+
+    //Sliding Panel
+    repositories {
+        mavenCentral()
+    }
+    implementation 'com.sothree.slidinguppanel:library:3.4.0'
 }

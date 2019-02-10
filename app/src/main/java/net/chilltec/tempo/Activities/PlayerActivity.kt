@@ -3,6 +3,7 @@ package net.chilltec.tempo.Activities
 import android.content.*
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Point
 import android.graphics.drawable.Drawable
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -11,6 +12,8 @@ import android.os.IBinder
 import android.support.constraint.ConstraintLayout
 import android.support.v4.content.res.ResourcesCompat
 import android.support.v4.view.GravityCompat
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -19,7 +22,10 @@ import android.view.View
 import android.widget.SeekBar
 import kotlinx.android.synthetic.main.activity_player.*
 import kotlinx.android.synthetic.main.album_item.*
+import kotlinx.android.synthetic.main.song_queue_item.view.*
 import net.chilltec.tempo.*
+import net.chilltec.tempo.Adapters.SongBrowserAdapter
+import net.chilltec.tempo.Adapters.SongQueueAdapter
 import net.chilltec.tempo.DataTypes.Album
 import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Song
@@ -35,30 +41,33 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var songsDB: Array<Song>
     private var isActive: Boolean = false
     val TAG = "PlayerActivity"
+    val context = this
 
     private var db: DatabaseService? = null
+    var mp: MediaService? = null
+    var isBound: Boolean = false
     private val dbConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as DatabaseService.LocalBinder
             db = binder.getService()
-            updateSongLables() //Must be called after the database mpConnection is established
-            updatePlayButton()
+            //Then, connect to MediaService
+            val bindIntent = Intent(context, MediaService::class.java)
+            bindService(bindIntent, mpConnection, Context.BIND_AUTO_CREATE)
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
         }
     }
-
-    var mp: MediaService? = null
-    var isBound: Boolean = false
+    //Connect to this only after DatabaseService connection is establshed
+    //onServiceConnected is only called after both MP and DB connections are established.
     val mpConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as MediaService.LocalBinder
             mp = binder.getService()
             isBound = true
-
-            //update buttonPlay
+            updateSongLables()
             updatePlayButton()
+            loadQueueAdapter()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -72,6 +81,7 @@ class PlayerActivity : AppCompatActivity() {
                 "BROADCAST_SONG_CHANGED" -> {
                     Log.i(TAG, "Received broadcast")
                     updateSongLables()
+                    loadQueueAdapter()
                 }
             }
         }
@@ -91,9 +101,6 @@ class PlayerActivity : AppCompatActivity() {
         var myActivity = findViewById<ConstraintLayout>(R.id.playerLayout)
         myActivity.requestFocus()
 
-        //Bind the MediaService
-        val bindIntent = Intent(this, MediaService::class.java)
-        bindService(bindIntent, mpConnection, Context.BIND_AUTO_CREATE)
         //Bind DatabaseService
         var dbIntent = Intent(this, DatabaseService::class.java)
         bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
@@ -246,6 +253,11 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
         }
+
+        //Setup queueLayout
+        queueLayout.panelHeight = (queueLayout.panelHeight * 1.1).toInt()
+        queueLayout.shadowHeight = 0
+        queueLayout.setScrollableView(songQueueBrowser)
     }
 
     private fun updateSongLables() {
@@ -315,7 +327,7 @@ class PlayerActivity : AppCompatActivity() {
             curDisplaySeconds = "0$curDisplaySeconds"
         }
         val curSongLable = "$curDisplayMinutes:$curDisplaySeconds"
-        Log.i(TAG, "Cur time: $curSongLable")
+        //Log.i(TAG, "Cur time: $curSongLable")
         playerCurTimeLable.post {
             playerCurTimeLable.text = curSongLable
         }
@@ -326,6 +338,48 @@ class PlayerActivity : AppCompatActivity() {
             seekBar.progress = curTimeInSeconds
         }
     }
+
+    //Song Queue
+    fun loadQueueAdapter(){
+        //Called after the database connection is esablished
+        lateinit var recyclerView: RecyclerView
+        lateinit var viewAdapter: RecyclerView.Adapter<*>
+        lateinit var viewManager: RecyclerView.LayoutManager
+        var songQueue: IntArray = mp?.getSongList() ?: intArrayOf()
+
+        val artistsDB = db?.getArtistsDB() ?: arrayOf()
+        val albumsDB = db?.getAlbumsDB() ?: arrayOf()
+        val songsDB = db?.getSongsDB() ?: arrayOf()
+        val songID: Int = mp?.getCurSong() ?: -1
+
+        if(artistsDB.isEmpty() || albumsDB.isEmpty() || songsDB.isEmpty()){
+            //endActivity()
+        }
+
+        viewManager = LinearLayoutManager(this)
+        viewAdapter = SongQueueAdapter(artistsDB, albumsDB, songsDB, songQueue, songID, this)
+
+        recyclerView = songQueueBrowser.apply{
+            //Only if changes do not effect size
+            setHasFixedSize(true)
+
+            //Linear layout
+            layoutManager = viewManager
+
+            //Pass viewAdapter
+            adapter = viewAdapter
+        }
+    }
+
+    fun onClickCalled(holder: SongQueueAdapter.SongQueueItemHolder){
+        val songId: Int = holder.song_queue_item.songID.text.toString().toInt()
+        mp?.playSongById(songId, true)
+    }
+
+    fun onLongClickCalled(holder: SongQueueAdapter.SongQueueItemHolder){
+
+    }
+    //End Song Queue
 
     //init toolbar
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
