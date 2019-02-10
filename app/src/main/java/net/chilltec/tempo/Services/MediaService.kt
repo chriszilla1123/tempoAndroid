@@ -13,6 +13,7 @@ import android.support.v4.media.session.MediaButtonReceiver
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import android.util.Range
 import android.view.KeyEvent
 import net.chilltec.tempo.R
 import okhttp3.*
@@ -22,6 +23,7 @@ import java.io.File
 import java.io.IOException
 import java.lang.Exception
 import java.util.*
+import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 class MediaService : Service() {
@@ -34,14 +36,30 @@ class MediaService : Service() {
     private val baseUrl = "http://www.chrisco.top/api"
     private val TAG = "MediaService"
     private var songSet: IntArray = intArrayOf()
+    private var shuffleSet: IntArray = intArrayOf()
+    private var playedSet: IntArray = intArrayOf()
+    private var songQueue: IntArray = intArrayOf()
     private var curSong: Int = -1
     private var nextSong:Int = -1
+    private var cacheQueue: Queue<Int> = LinkedList()
+
+
+    //Flags
+    private var mpIsSafe: Boolean = true
     private var isWifiConnected: Boolean = false
     private var isMobileConnected: Boolean = false
-    private var cacheQueue: Queue<Int> = LinkedList()
     private var curDownloading: Boolean = false
     private var isStreaming: Boolean = false
     private var dbIsInit: Boolean = false
+    private var shuffleEnabled: Boolean = false
+    private var repeatEnabled: Boolean = false
+    private var hasRepeated: Boolean = false
+
+    //Constants
+    val BROADCAST_SONG_UPDATE = "BROADCAST_SONG_CHANGED"
+    val BROADCAST_PLAY_PAUSE =  "BROADCAST_PLAY_PAUSE"
+    val BROADCAST_SHUFFLE_UPDATE = "BROADCAST_SHUFFLE_UPDATE"
+    val BROADCAST_REPEAT_UPDATE = "BROADCAST_REPEAT_UPDATE"
 
     var db: DatabaseService? = null
     val DBconnection = object: ServiceConnection {
@@ -81,6 +99,7 @@ class MediaService : Service() {
     override fun onDestroy() {
         Log.i(TAG, "Service onDestroy")
         unregisterReceiver(noiseReceiver)
+        unbindService(DBconnection)
     }
 
     inner class LocalBinder: Binder() {
@@ -88,11 +107,12 @@ class MediaService : Service() {
             return this@MediaService
         }
     }
-
     fun playerInit(){
         //Sets a new MediaPlayer with the initial options.
+        mpIsSafe = false
         mp.release()
         mp = MediaPlayer()
+        mpIsSafe = true
 
         val attr = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -126,15 +146,7 @@ class MediaService : Service() {
                 Log.i(TAG, "ERROR: Attempted to play invalid song id: $songID")
                 return@Runnable
             }
-            var songSetIndex: Int = songSet.indexOf(songID)
-            if(songSetIndex == -1){
-                nextSong = -1
-            }
-            else if(songSet.size > (songSetIndex + 1)){
-                nextSong = songSet[songSetIndex + 1]
-            }
-            else nextSong = -1
-            curSong = songID
+            updateCurNextSong(songID)
             val cacheDir = this.cacheDir
             val curFileLoc = "$curSong.song"
             val nextFileLoc = "$nextSong.song"
@@ -236,6 +248,25 @@ class MediaService : Service() {
         }
     }
 
+    fun updateCurNextSong(id: Int){
+        //Sets the given id as the curSong id and updates nextSong
+        if(songQueue.isEmpty()) return
+        if(id in songQueue){
+            curSong = id
+            val index = songQueue.indexOf(id)
+            if((index + 1) <= songQueue.lastIndex){
+                nextSong = songQueue[index + 1]
+            }
+        }
+        else{
+            //Error, set first song in queue to curSong
+            curSong = songQueue[0]
+            if(1 <= songQueue.lastIndex){
+                nextSong = songQueue[1]
+            }
+        }
+    }
+
     fun clearCache(){
         //Deletes all song files that have been downloaded to cache
         Thread(Runnable {
@@ -272,19 +303,65 @@ class MediaService : Service() {
             }
         }
     }
+    fun toggleShuffle(){
+        if(shuffleEnabled){
+            songQueue = songSet
+            shuffleEnabled = false
+        }
+        else{
+            songQueue = shuffleSet
+            shuffleEnabled = true
+        }
+        updateCurNextSong(curSong)
+        sendShuffleUpdateBroadcast()
+    }
+    fun shuffler(list: IntArray): IntArray{
+        //Shuffles a given IntArray containing song IDs
+        var listCopy = list.toMutableList()
+        var shuffledList = mutableListOf<Int>()
+        val random = Random()
+        while(listCopy.size > 0){
+            val randInt = random.nextInt().absoluteValue
+            val index = randInt.rem(listCopy.size)
+            shuffledList.add(listCopy.removeAt(index))
+        }
+        Log.i(TAG, "oldSet: $list")
+        Log.i(TAG, "Shuffled: $shuffledList")
+        return shuffledList.toIntArray()
+    }
+    fun toggleRepeat(){
+        this.repeatEnabled = !this.repeatEnabled
+        sendRepeatUpdateBroadcast()
+    }
+    fun getShuffleStatus(): Boolean = this.shuffleEnabled
+    fun getRepeatStatus(): Boolean = this.repeatEnabled
 
     //Broadcasts
     fun sendSongUpdateBroadcast(){
         Log.i(TAG, "Sending song update request")
         Intent().also {intent ->
-            intent.action = "BROADCAST_SONG_CHANGED"
+            intent.action = BROADCAST_SONG_UPDATE
             sendBroadcast(intent)
         }
     }
     fun sendPlayPauseBroadcast(){
         Log.i(TAG, "Sending PlayPause Notification")
         Intent().also {intent ->
-            intent.action = "BROADCAST_SONG_PLAY_PAUSE"
+            intent.action = BROADCAST_PLAY_PAUSE
+            sendBroadcast(intent)
+        }
+    }
+    fun sendShuffleUpdateBroadcast(){
+        Log.i(TAG, "Sending Shuffle Update Notification")
+        Intent().also {intent ->
+            intent.action = BROADCAST_SHUFFLE_UPDATE
+            sendBroadcast(intent)
+        }
+    }
+    fun sendRepeatUpdateBroadcast(){
+        Log.i(TAG, "Sending Repeat Update Notification")
+        Intent().also {intent ->
+            intent.action = BROADCAST_REPEAT_UPDATE
             sendBroadcast(intent)
         }
     }
@@ -292,9 +369,26 @@ class MediaService : Service() {
 
     fun setSongList(list: IntArray){
         //Accepts an array of Integer song IDs. The can corrispond to songs from the current album, artist, or playlist
-        songSet = list
+        songSet = list.copyOf()
+        shuffleSet = shuffler(list)
+        if(shuffleEnabled) {
+            songSet = shuffleSet
+        }
+        else{
+            songQueue = songSet
+        }
+        //Clear the playedSet
+        playedSet = intArrayOf()
     }
-
+    fun getSongList(): IntArray {
+        //Returns the songs that are in the current song set.
+        //This is not necessarily the order songs will be played in.
+        return this.songSet
+    }
+    fun getSongQueue(): IntArray {
+        //Returns the songs in the current song set, in the order they will be played.
+        return this.songQueue
+    }
     fun setProgress(time: Int){
         //Sets the current song to the given time, in milliseconds
         //Accepts a value between 0 and mp.duration
@@ -373,9 +467,9 @@ class MediaService : Service() {
         else{
             //Otherwise go to previous song
             mp.reset()
-            val curIndex = songSet.indexOf(curSong)
+            val curIndex = songQueue.indexOf(curSong)
             var toPlay = -1
-            if(curIndex >= 1) toPlay = songSet[curIndex - 1]
+            if(curIndex >= 1) toPlay = songQueue[curIndex - 1]
             if(toPlay != -1){
                 nextSong = curSong
                 curSong = toPlay
@@ -407,13 +501,15 @@ class MediaService : Service() {
     fun control_next(){
         Log.i(TAG, "Control_Next")
 
+        if(mpIsSafe) mp.reset()
+        else return
+
         var toPlay: Int = nextSong
-        var songSetIndex: Int = songSet.indexOf(toPlay)
-        mp.reset()
+        var songQueueIndex: Int = songQueue.indexOf(toPlay)
 
         if(toPlay != -1){
-            if(songSet.size > (songSetIndex + 1)){
-                nextSong = songSet[songSetIndex + 1]
+            if(songQueue.size > (songQueueIndex + 1)){
+                nextSong = songQueue[songQueueIndex + 1]
             }
             else{
                 nextSong = -1
@@ -424,10 +520,6 @@ class MediaService : Service() {
         else{
             Log.i(TAG, "Hit end of queue")
         }
-    }
-
-    fun getSongList(): IntArray {
-        return this.songSet
     }
 
     //Administrative Functions

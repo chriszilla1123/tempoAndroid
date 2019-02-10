@@ -58,26 +58,40 @@ class PlayerActivity : AppCompatActivity() {
             isBound = true
             updateSongLables()
             updatePlayButton()
-            loadQueueAdapter()
+            updateShuffleButton()
+            updateRepeatButton()
+            updateSongQueue()
+            //Register Receiver
+            registerReceiver(playerUpdateReciever, IntentFilter(mp?.BROADCAST_SONG_UPDATE))
+            registerReceiver(playerUpdateReciever, IntentFilter(mp?.BROADCAST_PLAY_PAUSE))
+            registerReceiver(playerUpdateReciever, IntentFilter(mp?.BROADCAST_SHUFFLE_UPDATE))
+            registerReceiver(playerUpdateReciever, IntentFilter(mp?.BROADCAST_REPEAT_UPDATE))
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             isBound = false
         }
     }
-
     val playerUpdateReciever = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
-                "BROADCAST_SONG_CHANGED" -> {
+                mp?.BROADCAST_SONG_UPDATE -> {
                     Log.i(TAG, "Received song update broadcast")
                     updateSongLables()
-                    loadQueueAdapter()
+                    updateSongQueue()
                 }
-
-                "BROADCAST_SONG_PLAY_PAUSE" -> {
+                mp?.BROADCAST_PLAY_PAUSE -> {
                     Log.i(TAG, "Received song play pause broadcast")
                     updatePlayButton()
+                }
+                mp?.BROADCAST_SHUFFLE_UPDATE -> {
+                    Log.i(TAG, "Recieved Shuffle Update Broadcast")
+                    updateShuffleButton()
+                    updateSongQueue()
+                }
+                mp?.BROADCAST_REPEAT_UPDATE -> {
+                    Log.i(TAG, "Received Repeat Update Broadcast")
+                    updateRepeatButton()
                 }
             }
         }
@@ -107,11 +121,10 @@ class PlayerActivity : AppCompatActivity() {
                 //toast("Progress is ${seekBar?.progress}%")
                 val displayMinutes = (progress / 60).toString()
                 val displaySeconds = (progress % 60).toString()
-                if(displaySeconds.length == 1){
+                if (displaySeconds.length == 1) {
                     //prepend 0
                     playerCurTimeLable.text = "$displayMinutes:0$displaySeconds"
-                }
-                else{
+                } else {
                     //Don't need to prepend 0
                     playerCurTimeLable.text = "$displayMinutes:$displaySeconds"
                 }
@@ -197,8 +210,6 @@ class PlayerActivity : AppCompatActivity() {
     override fun onResume() {
         isActive = true
         super.onResume()
-        registerReceiver(playerUpdateReciever, IntentFilter("BROADCAST_SONG_CHANGED"))
-        registerReceiver(playerUpdateReciever, IntentFilter("BROADCAST_SONG_PLAY_PAUSE"))
         //Bind the MediaService
         val bindIntent = Intent(this, MediaService::class.java)
         bindService(bindIntent, mpConnection, Context.BIND_AUTO_CREATE)
@@ -208,7 +219,7 @@ class PlayerActivity : AppCompatActivity() {
 
         //Update song times in another thread
         Thread(Runnable {
-            while(isActive){
+            while (isActive) {
                 updateTimer()
                 Thread.sleep(1000)
             }
@@ -217,7 +228,7 @@ class PlayerActivity : AppCompatActivity() {
         //Control onClickDown and onClickUp listeners
         val pressedColor = Color.rgb(80, 80, 80)
         playerButtonPrev.onTouch { v, event ->
-            when(event.action){
+            when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     playerButtonPrev.setColorFilter(pressedColor)
                 }
@@ -228,7 +239,7 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
         playerButtonPlay.onTouch { v, event ->
-            when(event.action){
+            when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     playerButtonPlay.setColorFilter(pressedColor)
                 }
@@ -240,13 +251,31 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
         playerButtonNext.onTouch { v, event ->
-            when(event.action){
+            when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     playerButtonNext.setColorFilter(pressedColor)
                 }
                 MotionEvent.ACTION_UP -> {
                     playerButtonNext.clearColorFilter()
                     mp?.control_next()
+                }
+            }
+        }
+        playerShuffleButton.onTouch { v, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    playerShuffleButton.setColorFilter(pressedColor)
+                }
+                MotionEvent.ACTION_UP -> {
+                    playerShuffleButton.clearColorFilter()
+                    mp?.toggleShuffle()
+                }
+            }
+        }
+        playerRepeatButton.onTouch { v, event ->
+            when (event.action) {
+                MotionEvent.ACTION_UP -> {
+                    mp?.toggleRepeat()
                 }
             }
         }
@@ -268,10 +297,9 @@ class PlayerActivity : AppCompatActivity() {
         val songDuration: Int = mp?.getCurrentDuration() ?: 100
         val hasArtwork = db?.songHasArtwork(songID) ?: false
 
-        if(songArtist.length == 0) {
+        if (songArtist.length == 0) {
             playerArtistAlbumLable.text = ""
-        }
-        else {
+        } else {
             playerArtistAlbumLable.text = "$songArtist - $songAlbum"
         }
         playerTitleLable.text = songTitle
@@ -280,21 +308,19 @@ class PlayerActivity : AppCompatActivity() {
         val durationDisplayMinutes = (songDurationInSeconds / 60).toString()
         val durationDisplaySeconds = (songDurationInSeconds % 60).toString()
         val durationDisplay: String //Prepend 0, if necessary
-        if(durationDisplaySeconds.length == 1){
+        if (durationDisplaySeconds.length == 1) {
             durationDisplay = "$durationDisplayMinutes:0$durationDisplaySeconds"
-        }
-        else durationDisplay ="$durationDisplayMinutes:$durationDisplaySeconds"
+        } else durationDisplay = "$durationDisplayMinutes:$durationDisplaySeconds"
 
         seekBar.max = songDurationInSeconds
         playerMaxTimeLable.text = durationDisplay
 
-        if(hasArtwork){
+        if (hasArtwork) {
             val albumArtUri = db?.getArtworkUriBySongId(songID)
-            if(albumArtUri != null){
+            if (albumArtUri != null) {
                 playerArtwork.setImageURI(albumArtUri)
             }
-        }
-        else{
+        } else {
             playerArtwork.setImageResource(R.drawable.ic_album_black_24dp)
         }
         updatePlayButton()
@@ -303,12 +329,37 @@ class PlayerActivity : AppCompatActivity() {
     private fun updatePlayButton() {
         //Sets play button text to "PLAY" is song is paused
         //Sets play button to "PAUSE" is song is playing
-        var isPlaying = mp?.isPlaying() ?: false
-        val playIcon = ResourcesCompat.getDrawable(resources, R.drawable.player_control_play, null)
-        val pauseIcon = ResourcesCompat.getDrawable(resources, R.drawable.player_control_pause, null)
+        val isPlaying = mp?.isPlaying() ?: false
 
-        if (!isPlaying) playerButtonPlay.setImageDrawable(playIcon)
-        else playerButtonPlay.setImageDrawable(pauseIcon)
+        if (!isPlaying) {
+            val playIcon = ResourcesCompat.getDrawable(resources, R.drawable.player_control_play, null)
+            playerButtonPlay.setImageDrawable(playIcon)
+        } else {
+            val pauseIcon = ResourcesCompat.getDrawable(resources, R.drawable.player_control_pause, null)
+            playerButtonPlay.setImageDrawable(pauseIcon)
+        }
+    }
+
+    private fun updateShuffleButton() {
+        val isEnabled = mp?.getShuffleStatus() ?: false
+        if (isEnabled) {
+            val enabledIcon = ResourcesCompat.getDrawable(resources, R.drawable.shuffle_icon_pressed, null)
+            playerShuffleButton.setImageDrawable(enabledIcon)
+        } else {
+            val disabledIcon = ResourcesCompat.getDrawable(resources, R.drawable.shuffle_icon, null)
+            playerShuffleButton.setImageDrawable(disabledIcon)
+        }
+    }
+
+    private fun updateRepeatButton() {
+        val isEnabled = mp?.getRepeatStatus() ?: false
+        if (isEnabled) {
+            val enabledIcon = ResourcesCompat.getDrawable(resources, R.drawable.repeat_icon_pressed, null)
+            playerRepeatButton.setImageDrawable(enabledIcon)
+        } else {
+            val disabledIcon = ResourcesCompat.getDrawable(resources, R.drawable.repeat_icon, null)
+            playerRepeatButton.setImageDrawable(disabledIcon)
+        }
     }
 
     private fun updateTimer() {
@@ -318,7 +369,7 @@ class PlayerActivity : AppCompatActivity() {
         val curTimeInSeconds: Int = curTimeInMillis / 1000
         val curDisplayMinutes: String = (curTimeInSeconds / 60).toString()
         var curDisplaySeconds: String = (curTimeInSeconds % 60).toString()
-        if(curDisplaySeconds.length == 1) {
+        if (curDisplaySeconds.length == 1) {
             //prepend a 0 if the seconds is less than 10
             curDisplaySeconds = "0$curDisplaySeconds"
         }
@@ -336,26 +387,26 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     //Song Queue
-    fun loadQueueAdapter(){
+    fun updateSongQueue() {
         //Called after the database connection is esablished
         lateinit var recyclerView: RecyclerView
         lateinit var viewAdapter: RecyclerView.Adapter<*>
         lateinit var viewManager: RecyclerView.LayoutManager
-        var songQueue: IntArray = mp?.getSongList() ?: intArrayOf()
+        var songQueue: IntArray = mp?.getSongQueue() ?: intArrayOf()
 
         val artistsDB = db?.getArtistsDB() ?: arrayOf()
         val albumsDB = db?.getAlbumsDB() ?: arrayOf()
         val songsDB = db?.getSongsDB() ?: arrayOf()
         val songID: Int = mp?.getCurSong() ?: -1
 
-        if(artistsDB.isEmpty() || albumsDB.isEmpty() || songsDB.isEmpty()){
+        if (artistsDB.isEmpty() || albumsDB.isEmpty() || songsDB.isEmpty()) {
             //endActivity()
         }
 
         viewManager = LinearLayoutManager(this)
         viewAdapter = SongQueueAdapter(artistsDB, albumsDB, songsDB, songQueue, songID, this)
 
-        recyclerView = songQueueBrowser.apply{
+        recyclerView = songQueueBrowser.apply {
             //Only if changes do not effect size
             setHasFixedSize(true)
 
@@ -367,12 +418,12 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    fun onClickCalled(holder: SongQueueAdapter.SongQueueItemHolder){
+    fun onClickCalled(holder: SongQueueAdapter.SongQueueItemHolder) {
         val songId: Int = holder.song_queue_item.songID.text.toString().toInt()
         mp?.playSongById(songId, true)
     }
 
-    fun onLongClickCalled(holder: SongQueueAdapter.SongQueueItemHolder){
+    fun onLongClickCalled(holder: SongQueueAdapter.SongQueueItemHolder) {
 
     }
     //End Song Queue

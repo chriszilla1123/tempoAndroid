@@ -6,6 +6,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import kotlinx.android.synthetic.main.activity_player.*
 import kotlinx.android.synthetic.main.song_queue_item.view.*
 import net.chilltec.tempo.Activities.PlayerActivity
 import net.chilltec.tempo.DataTypes.Album
@@ -58,12 +59,16 @@ class SongQueueAdapter(val artistsDB: Array<Artist>,
 
         //Change text color for the currently playing song
         if(songID == nowPlaying){
+
             val highlightColor = Color.GREEN
             holder.song_queue_item.songTitleLable.setTextColor(highlightColor)
             holder.song_queue_item.songQueuePlayIcon.visibility = View.VISIBLE
+            context.songQueueBrowser.scrollToPosition(position)
         }
     }
 
     //Return the size of the dataset, the number of songs
     override fun getItemCount() = songList.size
+
+    override fun getItemViewType(position: Int) = position
 }
