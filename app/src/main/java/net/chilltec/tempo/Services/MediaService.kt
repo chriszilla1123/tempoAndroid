@@ -175,6 +175,7 @@ class MediaService : Service() {
 
     fun playInternetSong() {
         //Plays song from the internet, either by downloading it to cache or streaming.
+        if(cacheQueue.isEmpty()) return
         curDownloading = true
         updateConnectionStatus()  //updates isWifiConnected
         var songId = cacheQueue.remove()
@@ -280,6 +281,14 @@ class MediaService : Service() {
             sendBroadcast(intent)
         }
     }
+    fun sendPlayPauseBroadcast(){
+        Log.i(TAG, "Sending PlayPause Notification")
+        Intent().also {intent ->
+            intent.action = "BROADCAST_SONG_PLAY_PAUSE"
+            sendBroadcast(intent)
+        }
+    }
+    //End Broadcasts
 
     fun setSongList(list: IntArray){
         //Accepts an array of Integer song IDs. The can corrispond to songs from the current album, artist, or playlist
@@ -341,7 +350,11 @@ class MediaService : Service() {
     }
 
     fun isPlaying(): Boolean{
-        return mp.isPlaying
+        return try{
+            mp.isPlaying
+        } catch(e: Exception){
+            false
+        }
     }
 
     //Media Controls
@@ -378,15 +391,17 @@ class MediaService : Service() {
         //Functionality for all play/pause buttons across tempo. Handles both playing
         //and pausing.
         Log.i(TAG, "Control_Play")
-
         if(mp.isPlaying) mp.pause()
         else mp.start()
+        updateNotification()
+        sendPlayPauseBroadcast()
     }
 
     fun control_pause(){
         //Handles only pausing, does nothing if the player is already paused.
         //Used to handle bluetooth / headphone disconnections
         if(mp.isPlaying) mp.pause()
+        updateNotification()
     }
 
     fun control_next(){
@@ -529,18 +544,47 @@ class MediaService : Service() {
             setSmallIcon(R.mipmap.ic_launcher_round)
             color = ContextCompat.getColor(ref, R.color.darkBackgroundOverImage)
 
+            //Actions, displayed in order as created
             addAction(
                 NotificationCompat.Action(
-                    R.drawable.notification_control_pause,
-                    "Pause",
+                    R.drawable.notification_control_prev,
+                    "Previous Song",
+                    MediaButtonReceiver.buildMediaButtonPendingIntent(ref,
+                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
+                )
+            )
+            addAction(
+                NotificationCompat.Action(
+                    //Icon
+                    if(isPlaying()) {
+                        R.drawable.notification_control_pause
+                    }
+                    else{
+                        R.drawable.notification_control_play
+                    },
+                    //Text
+                    if(isPlaying()) {"Pause"}
+                    else {"Play"},
+                    //Action
                     MediaButtonReceiver.buildMediaButtonPendingIntent(ref,
                         PlaybackStateCompat.ACTION_PLAY_PAUSE)
+                )
+            )
+            addAction(
+                NotificationCompat.Action(
+                    R.drawable.notification_control_next,
+                    "Next Song",
+                    MediaButtonReceiver.buildMediaButtonPendingIntent(ref,
+                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT)
                 )
             )
 
             setStyle(android.support.v4.media.app.NotificationCompat.MediaStyle()
                 .setMediaSession(ms.sessionToken)
+                //Show first 3 actions always
                 .setShowActionsInCompactView(0)
+                .setShowActionsInCompactView(1)
+                .setShowActionsInCompactView(2)
                 .setShowCancelButton(true)
                 .setCancelButtonIntent(
                     MediaButtonReceiver.buildMediaButtonPendingIntent(ref,
@@ -549,6 +593,21 @@ class MediaService : Service() {
             )
         }
         startForeground(101, builder.build())
+    }
+    fun updateNotification(){
+        val controller = ms.controller
+        val metadata = controller.metadata
+        try{
+            val metadataID = metadata.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
+            if(curSong.toString() == metadataID){
+                //Update the notification
+                createNotification()
+            }
+            else{
+                //Set metadata and create the notification
+                setMetadata(curSong)
+            }
+        } catch(e: Exception){return}
     }
     fun createNotificationChannel(channelID: String, channelName: String): String{
         val channel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

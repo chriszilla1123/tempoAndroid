@@ -1,13 +1,9 @@
 package net.chilltec.tempo.Activities
 
 import android.content.*
-import android.content.res.ColorStateList
 import android.graphics.Color
-import android.graphics.Point
-import android.graphics.drawable.Drawable
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Handler
 import android.os.IBinder
 import android.support.constraint.ConstraintLayout
 import android.support.v4.content.res.ResourcesCompat
@@ -18,22 +14,17 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
-import android.view.View
 import android.widget.SeekBar
 import kotlinx.android.synthetic.main.activity_player.*
-import kotlinx.android.synthetic.main.album_item.*
 import kotlinx.android.synthetic.main.song_queue_item.view.*
 import net.chilltec.tempo.*
-import net.chilltec.tempo.Adapters.SongBrowserAdapter
 import net.chilltec.tempo.Adapters.SongQueueAdapter
 import net.chilltec.tempo.DataTypes.Album
 import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Song
 import net.chilltec.tempo.Services.DatabaseService
 import net.chilltec.tempo.Services.MediaService
-import org.jetbrains.anko.sdk27.coroutines.onClick
 import org.jetbrains.anko.sdk27.coroutines.onTouch
-import java.util.concurrent.TimeUnit
 
 class PlayerActivity : AppCompatActivity() {
     private lateinit var artistsDB: Array<Artist>
@@ -75,13 +66,18 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    val songUpdateReceiver = object : BroadcastReceiver() {
+    val playerUpdateReciever = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
                 "BROADCAST_SONG_CHANGED" -> {
-                    Log.i(TAG, "Received broadcast")
+                    Log.i(TAG, "Received song update broadcast")
                     updateSongLables()
                     loadQueueAdapter()
+                }
+
+                "BROADCAST_SONG_PLAY_PAUSE" -> {
+                    Log.i(TAG, "Received song play pause broadcast")
+                    updatePlayButton()
                 }
             }
         }
@@ -192,7 +188,7 @@ class PlayerActivity : AppCompatActivity() {
     override fun onPause() {
         isActive = false
         super.onPause()
-        unregisterReceiver(songUpdateReceiver)
+        unregisterReceiver(playerUpdateReciever)
         unbindService(dbConnection)
         unbindService(mpConnection)
         //finish()
@@ -201,7 +197,8 @@ class PlayerActivity : AppCompatActivity() {
     override fun onResume() {
         isActive = true
         super.onResume()
-        registerReceiver(songUpdateReceiver, IntentFilter("BROADCAST_SONG_CHANGED"))
+        registerReceiver(playerUpdateReciever, IntentFilter("BROADCAST_SONG_CHANGED"))
+        registerReceiver(playerUpdateReciever, IntentFilter("BROADCAST_SONG_PLAY_PAUSE"))
         //Bind the MediaService
         val bindIntent = Intent(this, MediaService::class.java)
         bindService(bindIntent, mpConnection, Context.BIND_AUTO_CREATE)
@@ -300,7 +297,6 @@ class PlayerActivity : AppCompatActivity() {
         else{
             playerArtwork.setImageResource(R.drawable.ic_album_black_24dp)
         }
-
         updatePlayButton()
     }
 

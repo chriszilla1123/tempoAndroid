@@ -267,6 +267,7 @@ class DatabaseService : Service() {
                         .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE,
                             "$songArtist - $songAlbum")
                         .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, artBMP)
+                        .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, id.toString())
                         .build()
                 }
                 else {
@@ -274,6 +275,7 @@ class DatabaseService : Service() {
                         .putString(MediaMetadataCompat.METADATA_KEY_TITLE, songTitle)
                         .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE,
                             "$songArtist - $songAlbum")
+                        .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, id.toString())
                         .build()
                 }
 
