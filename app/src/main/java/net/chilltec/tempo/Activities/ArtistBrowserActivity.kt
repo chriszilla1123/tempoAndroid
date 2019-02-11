@@ -33,12 +33,13 @@ class ArtistBrowserActivity : AppCompatActivity() {
     private lateinit var viewManager: RecyclerView.LayoutManager
     private lateinit var artistsDB: Array<Artist>
     private lateinit var albumsDB: Array<Album>
-
     private val ref = this
+    private val TAG = "ArtistBrowserActivity"
 
     private var db: DatabaseService? = null
     private val dbConnection = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            Log.i(TAG, "Connected to db")
             val binder = service as DatabaseService.LocalBinder
             db = binder.getService()
             loadAdapter() //Must be called after the database mpConnection is established
