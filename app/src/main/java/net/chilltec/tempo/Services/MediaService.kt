@@ -633,7 +633,7 @@ class MediaService : Service() {
             setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
             //Set app icon
-            setSmallIcon(R.mipmap.ic_launcher_round)
+            setSmallIcon(R.drawable.ic_white_notification)
             color = ContextCompat.getColor(ref, R.color.darkBackgroundOverImage)
 
             //Actions, displayed in order as created
