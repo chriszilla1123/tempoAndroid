@@ -15,6 +15,7 @@ import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import android.util.Range
 import android.view.KeyEvent
+import net.chilltec.tempo.Activities.PlayerActivity
 import net.chilltec.tempo.R
 import okhttp3.*
 import org.jetbrains.anko.runOnUiThread
@@ -54,6 +55,7 @@ class MediaService : Service() {
     private var shuffleEnabled: Boolean = false
     private var repeatEnabled: Boolean = false
     private var hasRepeated: Boolean = false
+    private var streamingEnabled: Boolean = true
 
     //Constants
     val BROADCAST_SONG_UPDATE = "BROADCAST_SONG_CHANGED"
@@ -185,7 +187,7 @@ class MediaService : Service() {
         }).start()
     }
 
-    fun playInternetSong() {
+    private fun playInternetSong() {
         //Plays song from the internet, either by downloading it to cache or streaming.
         if(cacheQueue.isEmpty()) return
         curDownloading = true
@@ -204,6 +206,7 @@ class MediaService : Service() {
         else {
             "$baseUrl/getLowSongById/$songId"
         }
+        //Log.i(TAG, songUrl)
 
         if(songFile.exists()){
             songFile.delete()
@@ -325,7 +328,7 @@ class MediaService : Service() {
             val index = randInt.rem(listCopy.size)
             shuffledList.add(listCopy.removeAt(index))
         }
-        Log.i(TAG, "oldSet: $list")
+        Log.i(TAG, "oldSet: ${list.toMutableList()}")
         Log.i(TAG, "Shuffled: $shuffledList")
         return shuffledList.toIntArray()
     }
@@ -621,7 +624,9 @@ class MediaService : Service() {
             }
             catch(e: Exception){}
             //Opens the player when the notification is clicked.
-            //setContentIntent(controller.sessionActivity)
+            val intent = Intent(ref, PlayerActivity::class.java)
+            val pendingIntent = PendingIntent.getActivity(ref, 0, intent, 0)
+            setContentIntent(pendingIntent)
 
             //Stop playback when  the notification is swiped or deleted
             setDeleteIntent(

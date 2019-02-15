@@ -107,7 +107,6 @@ class PlayerActivity : AppCompatActivity() {
             setDisplayHomeAsUpEnabled(true)
             setHomeAsUpIndicator(R.drawable.ic_menu_white_24dp)
         }
-
         var myActivity = findViewById<ConstraintLayout>(R.id.playerLayout)
         myActivity.requestFocus()
 
@@ -129,11 +128,9 @@ class PlayerActivity : AppCompatActivity() {
                     playerCurTimeLable.text = "$displayMinutes:$displaySeconds"
                 }
             }
-
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
                 //toast("Progress is ${seekBar?.progress}%")
             }
-
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 //toast("Progress is ${seekBar?.progress}%")
                 var progress = if (seekBar?.progress != null) {
@@ -144,7 +141,6 @@ class PlayerActivity : AppCompatActivity() {
             }
 
         })
-
         //init intents
         fun openArtistBrowser() {
             val allArtists = db?.getAllArtistIds() //May be null!
@@ -153,7 +149,6 @@ class PlayerActivity : AppCompatActivity() {
             intent.putExtra("title", "All Artists")
             startActivity(intent)
         }
-
         fun openAlbumBrowser() {
             val allAlbums = db?.getAllAlbumIds() //May be null!
             val intent = Intent(this, AlbumBrowserActivity::class.java)
@@ -161,7 +156,6 @@ class PlayerActivity : AppCompatActivity() {
             intent.putExtra("title", "All Albums")
             startActivity(intent)
         }
-
         fun openSongBrowser() {
             val allSongs = db?.getAllSongIds() //May be null!
             val intent = Intent(this, SongBrowserActivity::class.java)
@@ -169,7 +163,6 @@ class PlayerActivity : AppCompatActivity() {
             intent.putExtra("title", "All Songs")
             startActivity(intent)
         }
-
         fun openPlayer() {
             val intent = Intent(this, PlayerActivity::class.java)
             startActivity(intent)
@@ -197,16 +190,16 @@ class PlayerActivity : AppCompatActivity() {
         }
         //End Init NavDrawer onClick listeners
     }
-
     override fun onPause() {
         isActive = false
         super.onPause()
+    }
+    override fun onDestroy() {
+        super.onDestroy()
         unregisterReceiver(playerUpdateReciever)
         unbindService(dbConnection)
         unbindService(mpConnection)
-        //finish()
     }
-
     override fun onResume() {
         isActive = true
         super.onResume()
@@ -285,7 +278,6 @@ class PlayerActivity : AppCompatActivity() {
         queueLayout.shadowHeight = 0
         queueLayout.setScrollableView(songQueueBrowser)
     }
-
     private fun updateSongLables() {
         //Called whenever the song is updated
         val songID: Int = mp?.getCurSong() ?: -1

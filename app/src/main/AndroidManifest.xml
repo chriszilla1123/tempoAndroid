@@ -30,7 +30,8 @@
                 android:name=".Activities.ArtistBrowserActivity"
                 android:label="@string/title_activity_artist_browser">
         </activity>
-        <activity android:name=".Activities.PlayerActivity">
+        <activity android:name=".Activities.PlayerActivity"
+            android:launchMode="singleTask">
         </activity>
 
         <receiver android:name="android.support.v4.media.session.MediaButtonReceiver">
