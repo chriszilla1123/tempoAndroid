@@ -679,9 +679,7 @@ class MediaService : Service() {
             setStyle(android.support.v4.media.app.NotificationCompat.MediaStyle()
                 .setMediaSession(ms.sessionToken)
                 //Show first 3 actions always
-                .setShowActionsInCompactView(0)
-                .setShowActionsInCompactView(1)
-                .setShowActionsInCompactView(2)
+                .setShowActionsInCompactView(0, 1, 2)
                 .setShowCancelButton(true)
                 .setCancelButtonIntent(
                     MediaButtonReceiver.buildMediaButtonPendingIntent(ref,
