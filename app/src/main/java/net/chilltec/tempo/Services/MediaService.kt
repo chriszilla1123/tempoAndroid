@@ -7,6 +7,7 @@ import android.media.*
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
 import android.os.*
+import android.renderscript.RenderScript
 import android.support.v4.app.NotificationCompat
 import android.support.v4.content.ContextCompat
 import android.support.v4.media.MediaMetadataCompat
@@ -601,6 +602,7 @@ class MediaService : Service() {
                 control_prev()
             } else if (keyCode == codeStop) {
                 control_pause()
+                stopForeground(true)
             }
             return super.onMediaButtonEvent(mediaButtonEvent)
         }
@@ -642,12 +644,10 @@ class MediaService : Service() {
         val mediaMetadata = controller.metadata
         //val description = mediaMetadata.description
         val ref = this
-
         val channelID =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { //Needed for Oreo +
                 createNotificationChannel("a", "Player")
             } else ""
-
         val builder = NotificationCompat.Builder(this, channelID).apply {
             setContentTitle(mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE))
             setContentText(mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION))
@@ -665,20 +665,17 @@ class MediaService : Service() {
             setDeleteIntent(
                 MediaButtonReceiver.buildMediaButtonPendingIntent(
                     ref,
-                    PlaybackStateCompat.ACTION_STOP
-                )
+                    PlaybackStateCompat.ACTION_STOP)
             )
-
             //Enable lockscreen controls
             setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-
             //Set app icon
             setSmallIcon(R.drawable.ic_white_notification)
             color = ContextCompat.getColor(ref, R.color.darkBackgroundOverImage)
 
             //Actions, displayed in order as created
-            addAction(
-                NotificationCompat.Action(
+            addAction( //"Previous" media control
+                NotificationCompat.Action(  //Icon, Text, Action
                     R.drawable.notification_control_prev,
                     "Previous Song",
                     MediaButtonReceiver.buildMediaButtonPendingIntent(
@@ -687,29 +684,26 @@ class MediaService : Service() {
                     )
                 )
             )
-            addAction(
-                NotificationCompat.Action(
-                    //Icon
+            addAction( //"Play/Pause" media control
+                NotificationCompat.Action(  //Icon, Text, Action
                     if (isPlaying()) {
                         R.drawable.notification_control_pause
                     } else {
                         R.drawable.notification_control_play
                     },
-                    //Text
                     if (isPlaying()) {
                         "Pause"
                     } else {
                         "Play"
                     },
-                    //Action
                     MediaButtonReceiver.buildMediaButtonPendingIntent(
                         ref,
                         PlaybackStateCompat.ACTION_PLAY_PAUSE
                     )
                 )
             )
-            addAction(
-                NotificationCompat.Action(
+            addAction( //"Next" media control
+                NotificationCompat.Action(  //Icon, Text, Action
                     R.drawable.notification_control_next,
                     "Next Song",
                     MediaButtonReceiver.buildMediaButtonPendingIntent(
@@ -718,11 +712,20 @@ class MediaService : Service() {
                     )
                 )
             )
-
+            addAction( //Close button, should stop media player
+                NotificationCompat.Action( //Icon, Text, Action
+                    R.drawable.notification_close_icon,
+                    "Close App",
+                    MediaButtonReceiver.buildMediaButtonPendingIntent(
+                        ref,
+                        PlaybackStateCompat.ACTION_STOP
+                    )
+                )
+            )
             setStyle(
                 android.support.v4.media.app.NotificationCompat.MediaStyle()
                     .setMediaSession(ms.sessionToken)
-                    //Show first 3 actions always
+                    //Show first 3 actions always (media controls)
                     .setShowActionsInCompactView(0, 1, 2)
                     .setShowCancelButton(true)
                     .setCancelButtonIntent(
@@ -733,7 +736,7 @@ class MediaService : Service() {
                     )
             )
         }
-        startForeground(101, builder.build())
+        startForeground(NotificationCompat.PRIORITY_HIGH, builder.build())
     }
 
     fun updateNotification() {
