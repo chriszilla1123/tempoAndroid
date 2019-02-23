@@ -7,7 +7,6 @@ import android.media.*
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
 import android.os.*
-import android.renderscript.RenderScript
 import android.support.v4.app.NotificationCompat
 import android.support.v4.content.ContextCompat
 import android.support.v4.media.MediaMetadataCompat
@@ -16,7 +15,6 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import android.view.KeyEvent
-import fi.iki.elonen.NanoHTTPD
 import net.chilltec.tempo.Activities.PlayerActivity
 import net.chilltec.tempo.R
 import okhttp3.*
@@ -24,8 +22,6 @@ import org.jetbrains.anko.runOnUiThread
 import org.jetbrains.anko.toast
 import java.io.*
 import java.lang.Exception
-import java.net.MalformedURLException
-import java.net.URL
 import java.util.*
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
@@ -36,9 +32,7 @@ class MediaService : Service() {
     private val binder = LocalBinder()
     private lateinit var ms: MediaSessionCompat
     val http = OkHttpClient()
-    private val localServerPort = 8089
     private val baseUrl = "http://www.chrisco.top/api"
-    private val localBaseUrl = "http://localhost:$localServerPort/?id="
     private val TAG = "MediaService"
     private var songSet: IntArray = intArrayOf()
     private var shuffleSet: IntArray = intArrayOf()
@@ -47,7 +41,6 @@ class MediaService : Service() {
     private var curSong: Int = -1
     private var nextSong: Int = -1
     private var cacheQueue: Queue<Int> = LinkedList()
-
 
     //Flags
     private var mpIsSafe: Boolean = true
@@ -86,33 +79,26 @@ class MediaService : Service() {
         playerInit()
         noisyReceiverInit()
         msInit()
-        server.start()
     }
-
     override fun onStartCommand(intent: Intent?, flags: Int, startID: Int): Int {
         Log.i(TAG, "Media Service Started")
         MediaButtonReceiver.handleIntent(ms, intent)
         return START_STICKY
     }
-
     override fun onBind(intent: Intent): IBinder? {
         Log.i(TAG, "Media Service Bound")
         return binder
     }
-
     override fun onDestroy() {
         Log.i(TAG, "Service onDestroy")
         unregisterReceiver(noiseReceiver)
         unbindService(DBconnection)
-        server.stop()
     }
-
     inner class LocalBinder : Binder() {
         fun getService(): MediaService {
             return this@MediaService
         }
     }
-
     fun playerInit() {
         //Sets a new MediaPlayer with the initial options.
         mpIsSafe = false
@@ -125,29 +111,26 @@ class MediaService : Service() {
             .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
             .build()
         mp.setAudioAttributes(attr)
-        mp.setOnPreparedListener {
-            Log.i(TAG, "Song prepared")
-            mp.start()
-            sendSongUpdateBroadcast()
-        }
-        mp.setOnCompletionListener {
-            Log.i(TAG, "onComplete")
-            control_next()
-        }
-        mp.setOnErrorListener { mp, what, extra ->
-            mp.reset()
-            true
+        mp.apply {
+            setOnPreparedListener {
+                Log.i(TAG, "Song prepared")
+                mp.start()
+                sendSongUpdateBroadcast()
+            }
+            setOnCompletionListener {
+                Log.i(TAG, "onComplete")
+                control_next()
+            }
+            setOnErrorListener { mp, what, extra ->
+                mp.reset()
+                true
+            }
         }
     }
-
     fun playSongById(songID: Int, force: Boolean = false) {
-        //Plays a given song.
-        //Pre-loads the next song, if applicable
+        //Plays a given song, and pre-loads the next song, if applicable
         //If force is true, the cacheQueue will be cleared and songID pushed to the front
         //  This is only used when a user directly requests a song by clicking.
-        //toast("Playing song id $songID")
-        Log.i(TAG, "Playing song id $songID")
-
         Thread(Runnable {
             if (songID <= 0) {
                 Log.i(TAG, "ERROR: Attempted to play invalid song id: $songID")
@@ -155,19 +138,16 @@ class MediaService : Service() {
             }
             updateCurNextSong(songID)
             setMetadata(songID)
-
             if(isCached(curSong)) {
                 Log.i(TAG, "Playing song $songID from cache")
-                val localURL = localBaseUrl + "$songID"
-                try{
-                    playerInit()
-                    mp.setDataSource(localURL)
-                    mp.prepareAsync()
-                } catch(e: Exception){
-                    e.printStackTrace()
-                }
+                //Get file, and return if it doesn't exist
+                val songFile = getSongFile(songID) ?: return@Runnable
+                playSongFromFile(songFile)
             }
             else{
+                //Start streaming the song, then download it to cache
+                streamSong(songID)
+                Log.i(TAG, "Playing song $songID from stream")
                 if(force){
                     cacheQueue.clear()
                     cacheQueue.add(curSong)
@@ -178,122 +158,78 @@ class MediaService : Service() {
                     if(!curDownloading) getInternetSong()
                 }
             }
-
             if(!isCached(nextSong)){
                 cacheQueue.add(nextSong)
                 if(!curDownloading) getInternetSong()
             }
         }).start()
     }
-    /*private fun playInternetSong() {
+    private fun getInternetSong() {
         //Plays song from the internet, either by downloading it to cache or streaming.
         if (cacheQueue.isEmpty()) return
         curDownloading = true
-        val isWifiConnected = getWifiStatus()
         var songId = cacheQueue.remove()
         var songFile = File(cacheDir, "$songId.song")
         if (songFile.exists() && songFile.length() > 0) {
-            //Return, downloading next item in cacheQueue if applicable
+            //Already downloaded, download next item in cacheQueue if applicable
             if (cacheQueue.isNotEmpty()) { getInternetSong() }
             return
         }
-        val songUrl: String = if (isWifiConnected) {
-            "$baseUrl/getSongById/$songId"
-        } else {
-            "$baseUrl/getLowSongById/$songId"
-        }
-        Log.i(TAG, songUrl)
-
-        if (songFile.exists()) {
-            songFile.delete()
-        }
-
-        Log.i(TAG, "Sending request to download song $songId")
+        val isWifiConnected = getWifiStatus()
+        val songUrl: String = if (isWifiConnected) { "$baseUrl/getSongById/$songId" }
+                                else { "$baseUrl/getLowSongById/$songId" }
+        if (songFile.exists()) { songFile.delete() }
+        Log.i(TAG, "Requesting song $songId from $songUrl")
         this.runOnUiThread {
             toast("Downloading song...")
         }
-
         val curRequest = Request.Builder().url(songUrl).build()
         http.newCall(curRequest).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {}
             override fun onResponse(call: Call, response: Response) {
-                //Log.i(TAG, "Got here now") Gets here right away
                 var respBytes = response.body()?.bytes() ?: byteArrayOf()
                 if (respBytes.size == 0) {
                     Log.i(TAG, "ERROR downloading song $songId to cache")
                 } else {
                     songFile.writeBytes(respBytes)
                     Log.i(TAG, "Successfully cached song $songId")
-                    if (songId == curSong) {
-                        playerInit()
-                        mp.setDataSource(songFile.absolutePath)
-                        mp.prepareAsync()
-                    }
                     if (cacheQueue.isNotEmpty()) getInternetSong()
                     else curDownloading = false
                 }
             }
         })
-    }*/
-    private fun getInternetSong() {
-        curDownloading = true
-        if(cacheQueue.isEmpty()) { return }
-        val songId = cacheQueue.remove()
-        val isWifiConnected = getWifiStatus()
-        val songFileLoc = "$songId.song"
-        val songFile = File(cacheDir, songFileLoc)
-        val songUrl: String = if(isWifiConnected) {
-            "$baseUrl/getSongById/$songId"
-        } else{
-            "$baseUrl/getLowSongById/$songId"
-        }
-        val localUrl = localBaseUrl + "$songId"
-        Log.i(TAG, "Requesting song $songId from $songUrl")
-        this.runOnUiThread { toast("Downloading song...") }
-        if(songFile.exists()) { songFile.delete() }
-
-        Thread(Runnable {
-            try{
-                val inputStream =  URL(songUrl).openStream()
-                val dataInputStream = DataInputStream(inputStream)
-                val buffer = ByteArray(1024) //1KB buffer
-                var length: Int
-                val fileStream = FileOutputStream(songFile)
-                //var startedSong = false
-
-                do{
-                    length = dataInputStream.read(buffer)
-                    if(length <= 0) continue
-                    fileStream.write(buffer, 0, length)
-
-                    //Start the song at 100KB downloaded
-                    /*if(!startedSong && songFile.length() >= (1024 * 100)) {
-                        playerInit()
-                        mp.setDataSource(localUrl)
-                        mp.prepareAsync()
-                        startedSong = true
-                    }*/
-                } while(length > 0)
-                dataInputStream.close()
-                inputStream.close()
-                fileStream.close()
-                if(songId == curSong){
-                    playerInit()
-                    mp.setDataSource(localUrl)
-                    mp.prepareAsync()
-                }
-                Log.i(TAG, "Successfully downloaded song $songId")
-                if(cacheQueue.isNotEmpty()) getInternetSong()
-                else curDownloading = false
-            } catch(e: Exception) { e.printStackTrace() }
-        }).start()
     }
-    fun downloadFile(songFile: File, songUrl: String){
+    fun streamSong(id: Int){
+        try {
+            isStreaming = true
+            var url = "$baseUrl/getSongById/$id"
+            playerInit()
+            mp.setDataSource(url)
+            mp.prepareAsync()
+        } catch(e: Exception){
 
+        }
+    }
+    fun playSongFromFile(file: File): Boolean{
+        try{
+            isStreaming = false
+            playerInit()
+            mp.setDataSource(file.absolutePath)
+            mp.prepareAsync()
+        } catch(e: Exception) {
+            return false
+        }
+        return true
+    }
+    fun getSongFile(id: Int): File? {
+        //Returns the file for the given song, if it exists
+        val songFileLoc = "$id.song"
+        val songFile = File(cacheDir, songFileLoc)
+        if(songFile.exists()){ return songFile }
+        else { return null }
     }
     fun isCached(id: Int): Boolean{
-        //Returns true if the given songID has a corisponding
-        //file in cache
+        //Returns true if the given songID has a downloaded file in cache
         val songFileLoc = "$id.song"
         val songFile = File(cacheDir, songFileLoc)
         return songFile.exists()
@@ -436,28 +372,20 @@ class MediaService : Service() {
     fun setProgress(time: Int) {
         //Sets the current song to the given time, in milliseconds
         //Accepts a value between 0 and mp.duration
-        if (isStreaming) {
-            Log.i(TAG, "Seek is disabled while streaming")
-            return
+        try{
+            var curDuration = getCurrentDuration()
+            if (time < 0 || time > curDuration) return
+            if (curDuration == -1) return
+            mp.seekTo(time)
+        } catch(e: Exception){
+            Log.i(TAG, "Can't seek right now")
         }
-
-        var curDuration = getCurrentDuration()
-        Log.i(TAG, "Attempting to set progress")
-        if (time < 0 || time > curDuration) return
-        if (curDuration == -1) return
-
-        mp.seekTo(time)
-        Log.i(TAG, "Set time to ${time}ms")
     }
 
     fun getProgress(): Int {
         //Returns the current song's integer progress in milliseconds.
         //A return value of 0 indicates the song has just started,
         // or an error has occured.
-        if (isStreaming) {
-            Log.i(TAG, "Progress cannot be viewed while streaming")
-            return 0
-        }
         try {
             return mp.currentPosition
         } catch (e: Exception) {
@@ -588,7 +516,7 @@ class MediaService : Service() {
             val codeStop = KeyEvent.KEYCODE_MEDIA_STOP
             val actionUp = KeyEvent.ACTION_UP
             val actionDown = KeyEvent.ACTION_DOWN
-            var event: KeyEvent? = mediaButtonEvent?.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
+            var event: KeyEvent? = mediaButtonEvent?.getParcelableExtra(Intent.EXTRA_KEY_EVENT)
             val keyCode = event?.keyCode ?: 0
 
             if (event?.action == actionUp) return true
@@ -771,30 +699,4 @@ class MediaService : Service() {
         service.createNotificationChannel(channel)
         return channelID
     }
-
-    //Local Media Server
-    val server: NanoHTTPD = object: NanoHTTPD(localServerPort){
-        override fun serve(session: IHTTPSession): Response = when(session.uri) {
-            "/" -> {
-                val songID = session.parameters.get("id")?.get(0)?.toIntOrNull() ?: 0
-                val songFileLoc = "$songID.song"
-                val songFile = File(cacheDir, songFileLoc)
-                if(songFile.exists()){
-                    //Returns the song as a stream
-                    Log.i(TAG, "Locally streaming song $songID")
-                    val songStream = songFile.inputStream()
-                    val res = newChunkedResponse(NanoHTTPD.Response.Status.OK,
-                        "audio/*", songStream)
-                    res.setChunkedTransfer(true)
-                    res.setKeepAlive(true)
-                    res //returns res
-                }
-                else{
-                    newFixedLengthResponse("File Not Found")
-                }
-            }
-            else -> newFixedLengthResponse("Error")
-        }
-    }
-    //End Local Media Server
 }
