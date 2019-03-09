@@ -185,13 +185,7 @@ class AlbumBrowserActivity : AppCompatActivity() {
             val albumID: Int = holder.album_item.albumID.text.toString().toInt()
             val albumName: String = holder.album_item.albumLable.text.toString()
             val artistName: String = holder.album_item.albumArtistLable.text.toString()
-            val songsMutableList = mutableListOf<Int>()
-            for(song in songsDB){
-                if(song.album == albumID){
-                    songsMutableList.add(song.id)
-                }
-            }
-            val songsList: IntArray = songsMutableList.toIntArray()
+            val songsList = db?.getSongListByAlbumId(albumID) ?: intArrayOf()
             val intent = Intent(this, SongBrowserActivity::class.java)
             intent.putExtra("songList", songsList)
             intent.putExtra("title", albumName)

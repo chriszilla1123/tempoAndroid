@@ -8,31 +8,33 @@ import android.os.Bundle
 import android.os.IBinder
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.GridLayoutManager
-import android.support.v7.widget.PopupMenu
+import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
-import android.view.MenuInflater
 import android.view.MenuItem
-
 import kotlinx.android.synthetic.main.activity_artist_browser.*
-import kotlinx.android.synthetic.main.artist_item.view.*
-import net.chilltec.tempo.*
-import net.chilltec.tempo.Adapters.ArtistBrowserAdapter
+import kotlinx.android.synthetic.main.activity_playlist_browser.*
+import kotlinx.android.synthetic.main.playlist_item.view.*
+import net.chilltec.tempo.Adapters.PlaylistBrowserAdapter
 import net.chilltec.tempo.DataTypes.Album
 import net.chilltec.tempo.DataTypes.Artist
+import net.chilltec.tempo.DataTypes.Playlist
+import net.chilltec.tempo.DataTypes.Song
+import net.chilltec.tempo.R
 import net.chilltec.tempo.Services.DatabaseService
 import net.chilltec.tempo.Services.MediaService
 
-class ArtistBrowserActivity : AppCompatActivity() {
+class PlaylistBrowserActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var viewManager: RecyclerView.LayoutManager
+    private lateinit var playlistsDB: Array<Playlist>
     private lateinit var artistsDB: Array<Artist>
     private lateinit var albumsDB: Array<Album>
+    private lateinit var songsDB: Array<Song>
     private val ref = this
-    private val TAG = "ArtistBrowserActivity"
+    private val TAG = "PlaylistBrowserActivity"
 
     private var db: DatabaseService? = null
     private val dbConnection = object: ServiceConnection {
@@ -42,7 +44,6 @@ class ArtistBrowserActivity : AppCompatActivity() {
             db = binder.getService()
             loadAdapter() //Must be called after the database mpConnection is established
         }
-
         override fun onServiceDisconnected(name: ComponentName?) {
         }
     }
@@ -60,25 +61,17 @@ class ArtistBrowserActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_artist_browser)
-        setSupportActionBar(artistToolbar)
+        setContentView(R.layout.activity_playlist_browser)
+        setSupportActionBar(playlistToolbar)
         var toolbar = supportActionBar
 
         toolbar?.title = if(intent.hasExtra("title")){ intent.getStringExtra("title") }
-                            else{ "Artists" }
+        else{ "Playlists" }
         toolbar?.subtitle = if(intent.hasExtra("subtitle")){ intent.getStringExtra("subtitle") }
-                            else{ "" }
+        else{ "" }
         toolbar?.apply {
             setDisplayHomeAsUpEnabled(true)
             setHomeAsUpIndicator(R.drawable.ic_menu_white_24dp)
-        }
-
-
-        if(intent.hasExtra("title")){
-            toolbar?.title = intent.getStringExtra("title")
-        }
-        else{
-            toolbar?.title = "Albums"
         }
 
         //Bind the DatabaseService
@@ -117,7 +110,7 @@ class ArtistBrowserActivity : AppCompatActivity() {
         //end init intents
 
         //Init NavDrawer onClick listeners
-        artist_navview.setNavigationItemSelectedListener { menuItem ->
+        playlist_navview.setNavigationItemSelectedListener { menuItem ->
             val id = menuItem.itemId
             when(id){
                 R.id.nav_artists -> {
@@ -139,14 +132,15 @@ class ArtistBrowserActivity : AppCompatActivity() {
     }
 
     fun loadAdapter(){
-        var artistList = intent.getIntArrayExtra("artistList")
+        var playlistList = intent.getIntArrayExtra("playlistList")
+        playlistsDB = db?.getPlaylistsDB() ?: arrayOf()
         artistsDB = db?.getArtistsDB() ?: arrayOf()
         albumsDB = db?.getAlbumsDB() ?: arrayOf()
-        viewManager = GridLayoutManager(this, 2)
-        //viewManager = LinearLayoutManager(this)
-        viewAdapter = ArtistBrowserAdapter(artistsDB, artistList, ref)
+        //viewManager = GridLayoutManager(this, 2)
+        viewManager = LinearLayoutManager(this)
+        viewAdapter = PlaylistBrowserAdapter(playlistsDB, playlistList, ref)
 
-        recyclerView = ArtistBrowser.apply{
+        recyclerView = PlaylistBrowser.apply{
             //Only if changes do not effect size
             setHasFixedSize(true)
 
@@ -166,7 +160,6 @@ class ArtistBrowserActivity : AppCompatActivity() {
 
     override fun onResume(){
         super.onResume()
-        //Bind the DatabaseService
         val dbIntent = Intent(this, DatabaseService::class.java)
         bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
         //Bind the MediaService
@@ -174,49 +167,21 @@ class ArtistBrowserActivity : AppCompatActivity() {
         bindService(bindIntent, mpConnection, Context.BIND_AUTO_CREATE)
     }
 
-    fun onClickHandler(holder: ArtistBrowserAdapter.ArtistItemHolder){
-        //Start the AlbumBrowser with albums from the clicked artist
-        var artistID: Int = holder.artist_item.artistID.text.toString().toInt()
-        var artistName: String = holder.artist_item.artistLable.text.toString()
-        var albumsMutableList = mutableListOf<Int>()
-        for(album in albumsDB){
-            if(album.artist == artistID){
-                albumsMutableList.add(album.id)
-            }
-        }
-        var albumsList: IntArray = albumsMutableList.toIntArray()
-        val intent = Intent(this, AlbumBrowserActivity::class.java)
-        intent.putExtra("albumList", albumsList)
-        intent.putExtra("title", artistName)
-        intent.putExtra("subtitle", "All albums")
-        startActivity(intent)
+    fun onClickHandler(holder: PlaylistBrowserAdapter.PlaylistItemHolder){
+        //Start the SongBrowser with songs from the clicked playlist
+        Thread(Runnable{
+            val playlistID: Int = holder.playlist_item.playlistID.text.toString().toInt()
+            val playlistName: String = holder.playlist_item.playlistLable.text.toString()
+            val songsList = db?.getSongListByPlaylistId(playlistID) ?: intArrayOf()
+            val intent = Intent(this, SongBrowserActivity::class.java)
+            intent.putExtra("songList", songsList)
+            intent.putExtra("title", playlistName)
+            intent.putExtra("subtitle", "Playlist")
+            startActivity(intent)
+        }).start()
     }
 
-    fun onLongClickHandler(holder: ArtistBrowserAdapter.ArtistItemHolder): Boolean {
-        var artistID: Int = holder.artist_item.artistID.text.toString().toInt()
-        Log.i("ArtistBrowserActivity", "Long click artist $artistID")
-
-        //
-        val popup = PopupMenu(this, holder.itemView)
-        val inflater: MenuInflater = popup.menuInflater
-        inflater.inflate(R.menu.artist_item_menu, popup.menu)
-        popup.show()
-        popup.setOnMenuItemClickListener { menuItem ->
-            val id = menuItem.itemId
-            when(id){
-                R.id.artistItemPlayAll -> {
-                    val songID: Int? = db?.getSongIdByArtistId(artistID)
-                    val songList: IntArray? = db?.getSongListByArtistId(artistID)
-                    if(songID != null && songID != -1 && songList != null && songList.isNotEmpty()){
-                        mp?.setSongList(songList)
-                        mp?.playSongById(songID, true)
-                    }
-                }
-            }
-            true
-        }
-        //
-
+    fun onLongClickHandler(holder: PlaylistBrowserAdapter.PlaylistItemHolder): Boolean {
         return true
     }
 

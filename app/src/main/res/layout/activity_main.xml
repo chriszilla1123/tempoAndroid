@@ -2,7 +2,7 @@
 
 <android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
                                         xmlns:app="http://schemas.android.com/apk/res-auto"
-                                        android:id="@+id/main_navdrawer"
+                                        xmlns:tools="http://schemas.android.com/tools" android:id="@+id/main_navdrawer"
                                         android:layout_width="match_parent"
                                         android:layout_height="match_parent"
                                         android:fitsSystemWindows="true">
@@ -47,9 +47,19 @@
                 android:id="@+id/buttonAllSongs"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                android:layout_marginBottom="16dp" app:layout_constraintBottom_toTopOf="@+id/buttonPlayer"
                 app:layout_constraintHorizontal_bias="0.507"
-                android:layout_marginTop="16dp" app:layout_constraintTop_toBottomOf="@+id/buttonAllAlbums"/>
+                android:layout_marginTop="16dp" app:layout_constraintTop_toBottomOf="@+id/buttonAllAlbums"
+                android:layout_marginBottom="16dp" app:layout_constraintBottom_toTopOf="@+id/buttonPlaylists"/>
+        <Button
+                android:text="Playlists"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/buttonPlaylists"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginBottom="16dp"
+                app:layout_constraintBottom_toTopOf="@+id/buttonPlayer" android:layout_marginTop="16dp"
+                app:layout_constraintTop_toBottomOf="@+id/buttonAllSongs"/>
         <Button
                 android:text="Player"
                 android:layout_width="wrap_content"
@@ -57,8 +67,8 @@
                 android:id="@+id/buttonPlayer"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                android:layout_marginTop="16dp" app:layout_constraintTop_toBottomOf="@+id/buttonAllSongs"
-                app:layout_constraintBottom_toBottomOf="parent" android:layout_marginBottom="32dp"/>
+                app:layout_constraintBottom_toBottomOf="parent" android:layout_marginBottom="16dp"
+                android:layout_marginTop="16dp" app:layout_constraintTop_toBottomOf="@+id/buttonPlaylists"/>
     </android.support.constraint.ConstraintLayout>
 
     <android.support.design.widget.NavigationView

@@ -90,6 +90,13 @@ class MainActivity : AppCompatActivity()  {
             intent.putExtra("title", "All Songs")
             startActivity(intent)
         }
+        fun openPlaylistBrowser(){
+            val allPlaylists = db?.getAllPlaylistIds()
+            val intent = Intent(this, PlaylistBrowserActivity::class.java)
+            intent.putExtra("playlistList", allPlaylists)
+            intent.putExtra("title", "All Playlists")
+            startActivity(intent)
+        }
         fun openPlayer(){
             val intent = Intent(this, PlayerActivity::class.java)
             startActivity(intent)
@@ -104,6 +111,9 @@ class MainActivity : AppCompatActivity()  {
         }
         buttonAllSongs.setOnClickListener{
             openSongBrowser()
+        }
+        buttonPlaylists.setOnClickListener{
+            openPlaylistBrowser()
         }
         buttonPlayer.setOnClickListener{
             openPlayer()

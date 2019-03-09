@@ -12,9 +12,7 @@ import android.support.v4.media.MediaMetadataCompat
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import net.chilltec.tempo.DataTypes.Album
-import net.chilltec.tempo.DataTypes.Artist
-import net.chilltec.tempo.DataTypes.Song
+import net.chilltec.tempo.DataTypes.*
 import okhttp3.*
 import java.io.File
 import java.io.IOException
@@ -24,16 +22,24 @@ import java.io.IOException
 class DatabaseService : Service() {
     private val binder = LocalBinder()
     private val TAG = "DatabaseService"
-
+    private val baseURL = "http://www.chrisco.top/api"
     private lateinit var artistsDB: Array<Artist>
     private lateinit var albumsDB: Array<Album>
     private lateinit var songsDB: Array<Song>
-    private val baseURL = "http://www.chrisco.top/api"
+    private lateinit var playlistsDB: Array<Playlist>
+    private lateinit var playlistSongsDB: Array<PlaylistSong>
     private val artistsFileLoc = "artists.db"
     private val albumsFileLoc = "albums.db"
     private val songsFileLoc = "songs.db"
+    private val playlistsFileLoc = "playlists.db"
+    private val playlistSongsFileLoc = "playlistSongs.db"
     private val databaseTimestampFileLoc = "databaseTimestamp.txt"
     private var isInitialized: Boolean = false
+    private var isArtistsDBInit: Boolean = false
+    private var isAlbumsDBInit: Boolean = false
+    private var isSongsDBInit: Boolean = false
+    private var isPlaylistsDBInit: Boolean = false
+    private var isPlaylistSongsDBInit: Boolean = false
 
     override fun onCreate(){
         Log.i(TAG, "Database Service Started")
@@ -48,10 +54,24 @@ class DatabaseService : Service() {
                 val artistsFile = File(filesDir, artistsFileLoc)
                 val albumsFile = File(filesDir, albumsFileLoc)
                 val songsFile = File(filesDir, songsFileLoc)
-                artistsDB = gson.fromJson<Array<Artist>>(artistsFile.readText(), object: TypeToken<Array<Artist>>(){}.type)
-                albumsDB = gson.fromJson<Array<Album>>(albumsFile.readText(), object: TypeToken<Array<Album>>(){}.type)
-                songsDB = gson.fromJson<Array<Song>>(songsFile.readText(), object: TypeToken<Array<Song>>(){}.type)
+                val playlistsFile = File(filesDir, playlistsFileLoc)
+                val playlistSongsFile = File(filesDir, playlistSongsFileLoc)
+                artistsDB = gson.fromJson<Array<Artist>>(artistsFile.readText(),
+                    object: TypeToken<Array<Artist>>(){}.type)
+                albumsDB = gson.fromJson<Array<Album>>(albumsFile.readText(),
+                    object: TypeToken<Array<Album>>(){}.type)
+                songsDB = gson.fromJson<Array<Song>>(songsFile.readText(),
+                    object: TypeToken<Array<Song>>(){}.type)
+                playlistsDB = gson.fromJson<Array<Playlist>>(playlistsFile.readText(),
+                    object: TypeToken<Array<Playlist>>(){}.type)
+                playlistSongsDB = gson.fromJson<Array<PlaylistSong>>(playlistSongsFile.readText(),
+                    object: TypeToken<Array<PlaylistSong>>(){}.type)
                 isInitialized = true
+                isArtistsDBInit = true
+                isAlbumsDBInit = true
+                isSongsDBInit = true
+                isPlaylistsDBInit = true
+                isPlaylistSongsDBInit = true
                 Log.i(TAG,"Database is initilized")
             }).start()
         }
@@ -61,6 +81,8 @@ class DatabaseService : Service() {
             val artistsFile = File(filesDir, artistsFileLoc)
             val albumsFile = File(filesDir, albumsFileLoc)
             val songsFile = File(filesDir, songsFileLoc)
+            val playlistsFile = File(filesDir, playlistsFileLoc)
+            val playlistSongsFile = File(filesDir, playlistSongsFileLoc)
             val databaseTimestampFile = File(filesDir, databaseTimestampFileLoc)
 
             //Start Initialize Databases
@@ -95,7 +117,9 @@ class DatabaseService : Service() {
                             override fun onResponse(call: Call, response: Response){
                                 var respString = response.body()?.string()
                                 artistsFile.writeText(respString.toString())
-                                artistsDB = gson.fromJson<Array<Artist>>(artistsFile.readText(), object: TypeToken<Array<Artist>>(){}.type)
+                                artistsDB = gson.fromJson<Array<Artist>>(artistsFile.readText(),
+                                    object: TypeToken<Array<Artist>>(){}.type)
+                                isArtistsDBInit = true
                             }
                         })
                         val albumURL = "$baseURL/getAlbums"
@@ -105,7 +129,9 @@ class DatabaseService : Service() {
                             override fun onResponse(call: Call, response: Response){
                                 var respString = response.body()?.string()
                                 albumsFile.writeText(respString.toString())
-                                albumsDB = gson.fromJson<Array<Album>>(albumsFile.readText(), object: TypeToken<Array<Album>>(){}.type)
+                                albumsDB = gson.fromJson<Array<Album>>(albumsFile.readText(),
+                                    object: TypeToken<Array<Album>>(){}.type)
+                                isAlbumsDBInit = true
                                 getAlbumArt()
                             }
                         })
@@ -116,8 +142,34 @@ class DatabaseService : Service() {
                             override fun onResponse(call: Call, response: Response){
                                 var respString = response.body()?.string()
                                 songsFile.writeText(respString.toString())
-                                songsDB = gson.fromJson<Array<Song>>(songsFile.readText(), object: TypeToken<Array<Song>>(){}.type)
-                                isInitialized = true
+                                songsDB = gson.fromJson<Array<Song>>(songsFile.readText(),
+                                    object: TypeToken<Array<Song>>(){}.type)
+                                isSongsDBInit = true
+                            }
+                        })
+                        val playlistURL = "$baseURL/getPlaylists"
+                        val playlistRequest = Request.Builder().url(playlistURL).build()
+                        http.newCall(playlistRequest).enqueue(object : Callback {
+                            override fun onFailure(call: Call, e: IOException){}
+                            override fun onResponse(call: Call, response: Response) {
+                                var respString = response.body()?.string()
+                                playlistsFile.writeText(respString.toString())
+                                playlistsDB =  gson.fromJson<Array<Playlist>>(playlistsFile.readText(),
+                                    object: TypeToken<Array<Playlist>>(){}.type)
+                                isPlaylistsDBInit = true
+                            }
+                        })
+
+                        val playlistSongURL = "$baseURL/getPlaylistSongs"
+                        val playlistSongRequest = Request.Builder().url(playlistSongURL).build()
+                        http.newCall(playlistSongRequest).enqueue(object : Callback {
+                            override fun onFailure(call: Call, e: IOException){}
+                            override fun onResponse(call: Call, response: Response) {
+                                var respString = response.body()?.string()
+                                playlistSongsFile.writeText(respString.toString())
+                                playlistSongsDB =  gson.fromJson<Array<PlaylistSong>>(playlistSongsFile.readText(),
+                                    object: TypeToken<Array<PlaylistSong>>(){}.type)
+                                isPlaylistSongsDBInit = true
                             }
                         })
 
@@ -138,6 +190,13 @@ class DatabaseService : Service() {
                     }
                 }
             })
+            while(!isInitialized){
+                if(isArtistsDBInit && isAlbumsDBInit && isSongsDBInit && isPlaylistsDBInit && isPlaylistSongsDBInit){
+                    Log.i(TAG, "Database is initialized")
+                    isInitialized = true
+                }
+                Thread.sleep(100)
+            }
         }).start()
     }
 
@@ -152,33 +211,37 @@ class DatabaseService : Service() {
     }
 
     //Return full database file functions
-    fun getArtistsDB(): Array<Artist> {
-        return artistsDB
-    }
-    fun getAlbumsDB(): Array<Album> {
-        return albumsDB
-    }
-    fun getSongsDB(): Array<Song> {
-        return songsDB
-    }
+    fun getArtistsDB(): Array<Artist> = artistsDB
+    fun getAlbumsDB(): Array<Album> = albumsDB
+    fun getSongsDB(): Array<Song> = songsDB
+    fun getPlaylistsDB(): Array<Playlist> = playlistsDB
+    fun getPlaylistSongsDB(): Array<PlaylistSong> = playlistSongsDB
     //End full database file functions
 
     //Database entry counting functions
     fun numArtists(): Int {
-        if(!isInitialized) return -1
+        if(!isArtistsDBInit) return -1
         return artistsDB.size
     }
     fun numAlbums(): Int {
-        if(!isInitialized) return -1
+        if(!isAlbumsDBInit) return -1
         return albumsDB.size
     }
     fun numSongs(): Int {
-        if(!isInitialized) return -1
+        if(!isSongsDBInit) return -1
         return songsDB.size
+    }
+    fun numPlaylists(): Int {
+        if(!isPlaylistsDBInit) return -1
+        return playlistsDB.size
+    }
+    fun numPlaylistSongs(): Int {
+        if(!isPlaylistSongsDBInit) return -1
+        return playlistSongsDB.size
     }
     //End database entry counting functions
 
-    //Database range functions'
+    //Database range functions
     fun getAllArtistIds(): IntArray {
         val numArtists = numArtists()
         val artistList = IntArray(numArtists)
@@ -197,11 +260,27 @@ class DatabaseService : Service() {
     }
     fun getAllSongIds(): IntArray {
         val numSongs = numSongs()
-        var songList = IntArray(numSongs)
+        val songList = IntArray(numSongs)
         for(i in 1..numSongs){
             songList[i-1] = i
         }
         return songList
+    }
+    fun getAllPlaylistIds(): IntArray {
+        val numPlaylists = numPlaylists()
+        val playlistList = IntArray(numPlaylists)
+        for(i in 1..numPlaylists){
+            playlistList[i-1] = i
+        }
+        return playlistList
+    }
+    fun getAllPlaylistSongIds(): IntArray {
+        val numPlaylistSongs = numPlaylistSongs()
+        val playlistSongsList = IntArray(numPlaylistSongs)
+        for(i in 1..numPlaylistSongs){
+            playlistSongsList[i-1] = i
+        }
+        return playlistSongsList
     }
     //End database range functions
 
@@ -294,7 +373,6 @@ class DatabaseService : Service() {
         val albumArtFile = File(albumArtLoc)
         return albumArtFile.exists()
     }
-
     fun getArtworkUriByAlbumId(id: Int): Uri? {
         //Returns the File object for the album artwork
         val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
@@ -305,6 +383,13 @@ class DatabaseService : Service() {
         val albumArtLoc = artDirLoc + File.separator + "$id.art"
         val albumArtFile = File(albumArtLoc)
         return Uri.fromFile(albumArtFile)
+    }
+    fun getSongListByAlbumId(id: Int): IntArray {
+        val songList = mutableListOf<Int>()
+        for(song in songsDB){
+            if(song.album == id) songList.add(song.id)
+        }
+        return songList.toIntArray()
     }
     //End Info by Album ID
 
@@ -325,6 +410,16 @@ class DatabaseService : Service() {
         return songList.toIntArray()
     }
     //End Info by Artist ID
+
+    //Info by Playlist ID
+    fun getSongListByPlaylistId(id: Int): IntArray{
+        val songList = mutableListOf<Int>()
+        for(song in playlistSongsDB){
+            if(song.playlist == id) songList.add(song.songId)
+        }
+        return songList.toIntArray()
+    }
+    //End Info by Playlist ID
 
     //Search
     fun search(searchTerm: String): Triple<IntArray, IntArray, IntArray>{

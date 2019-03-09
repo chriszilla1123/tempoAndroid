@@ -522,7 +522,6 @@ class MediaService : Service() {
             if (event?.action == actionUp) return true
 
             if (keyCode == codePlay || keyCode == codePause || keyCode == codePlayPause) {
-                Log.i(TAG, "Got here")
                 control_play()
             } else if (keyCode == codeNext) {
                 control_next()
