@@ -215,14 +215,15 @@ class SongBrowserActivity : AppCompatActivity() {
     fun addPlaylistPopup(holder: SongBrowserAdapter.SongItemHolder){
         //Show a popup menu with all the playlists
         val songId = holder.song_item.songID.text.toString().toInt()
+        val songName = holder.song_item.songTitleLable.text.toString()
         val songDir = db?.getSongDirBySongId(songId) ?: ""
         if(songDir.length >= 0){
-            Log.i(TAG,"Attempting to add $songDir to playlist")
             val playlistMenu = PopupMenu(this, holder.itemView)
             val playlistList = db?.getAllPlaylistIds() ?: intArrayOf()
             for(playlistID in playlistList){
                 val playlistName = db?.getPlaylistNameByPlaylistId(playlistID) ?: "test"
                 playlistMenu.menu.add(playlistName)
+                Log.i(TAG, "Adding \"$songName\" to playlist: $playlistName")
             }
 
             playlistMenu.show()
@@ -232,6 +233,7 @@ class SongBrowserActivity : AppCompatActivity() {
                 val songID = holder.song_item.songID.text.toString().toInt()
                 if(playlistID >= 1 && songID >= 1){
                     db?.addSongToPlaylist(playlistID, songID)
+                    Log.i(TAG, "Adding \"$songName\" to playlist: $playlistName")
                 }
                 true
             }
@@ -243,23 +245,39 @@ class SongBrowserActivity : AppCompatActivity() {
         val songId = holder.song_item.songID.text.toString().toInt()
         val songDir = db?.getSongDirBySongId(songId) ?: ""
         if(songDir.length >= 0){
-            Log.i(TAG,"Attempting to remove $songDir from playlist")
             val playlistMenu = PopupMenu(this, holder.itemView)
             val playlistList = db?.getAllPlaylistIds() ?: intArrayOf()
-            for(playlistID in playlistList){
-                val playlistName = db?.getPlaylistNameByPlaylistId(playlistID) ?: "test"
-                playlistMenu.menu.add(playlistName)
-            }
-
-            playlistMenu.show()
-            playlistMenu.setOnMenuItemClickListener { menuItem ->
-                val playlistName = menuItem.title.toString()
+            //If currently browsing playlist, remove from that playlist.
+            //Else, show all the playlists to remove from
+            val isPlaylistBrowser = (supportActionBar?.subtitle.toString() == "Playlist")
+            if(isPlaylistBrowser){
+                val playlistName = supportActionBar?.title.toString()
                 val playlistID = db?.getPlaylistIDByPlaylistName(playlistName) ?: 0
                 val songID = holder.song_item.songID.text.toString().toInt()
-                if(playlistID >= 1 && songID >= 1){
+                val songName = holder.song_item.songTitleLable.text.toString()
+                if(playlistID >= 1 && songID >= 1) {
                     db?.removeSongFromPlaylist(playlistID, songID)
+                    Log.i(TAG, "Removing \"$songName\" from playlist: $playlistName")
                 }
-                true
+            }
+            else{
+                for(playlistID in playlistList){
+                    val playlistName = db?.getPlaylistNameByPlaylistId(playlistID) ?: "test"
+                    playlistMenu.menu.add(playlistName)
+                }
+
+                playlistMenu.show()
+                playlistMenu.setOnMenuItemClickListener { menuItem ->
+                    val playlistName = menuItem.title.toString()
+                    val playlistID = db?.getPlaylistIDByPlaylistName(playlistName) ?: 0
+                    val songID = holder.song_item.songID.text.toString().toInt()
+                    val songName = holder.song_item.songTitleLable.text.toString()
+                    if(playlistID >= 1 && songID >= 1) {
+                        db?.removeSongFromPlaylist(playlistID, songID)
+                        Log.i(TAG, "Removing \"$songName\" from playlist: $playlistName")
+                    }
+                    true
+                }
             }
         }
     }
