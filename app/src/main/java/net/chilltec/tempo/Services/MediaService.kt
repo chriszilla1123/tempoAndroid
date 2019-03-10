@@ -171,8 +171,9 @@ class MediaService : Service() {
         //Plays song from the internet, either by downloading it to cache or streaming.
         if (cacheQueue.isEmpty()) return
         curDownloading = true
-        var songId = cacheQueue.remove()
-        var songFile = File(cacheDir, "$songId.song")
+        val songId = cacheQueue.remove()
+        if(songId < 1) return
+        val songFile = File(cacheDir, "$songId.song")
         if (songFile.exists() && songFile.length() > 0) {
             //Already downloaded, download next item in cacheQueue if applicable
             if (cacheQueue.isNotEmpty()) { getInternetSong() }
