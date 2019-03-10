@@ -14,8 +14,6 @@ import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import kotlinx.android.synthetic.main.activity_album_browser.*
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_song_browser.*
 import kotlinx.android.synthetic.main.song_item.view.*
 import net.chilltec.tempo.Services.DatabaseService
@@ -23,6 +21,7 @@ import net.chilltec.tempo.Services.MediaService
 import net.chilltec.tempo.R
 import net.chilltec.tempo.Adapters.SongBrowserAdapter
 import net.chilltec.tempo.R.id.songItemAddToPlaylist
+import net.chilltec.tempo.R.id.songItemRemoveFromPlaylist
 
 class SongBrowserActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
@@ -199,7 +198,11 @@ class SongBrowserActivity : AppCompatActivity() {
         menu.setOnMenuItemClickListener{
             when(it.itemId){
                 songItemAddToPlaylist -> {
-                    playlistPopup(holder)
+                    addPlaylistPopup(holder)
+                    true
+                }
+                songItemRemoveFromPlaylist -> {
+                    removePlaylistPopup(holder)
                     true
                 }
                 else -> {
@@ -209,7 +212,7 @@ class SongBrowserActivity : AppCompatActivity() {
         }
     }
 
-    fun playlistPopup(holder: SongBrowserAdapter.SongItemHolder){
+    fun addPlaylistPopup(holder: SongBrowserAdapter.SongItemHolder){
         //Show a popup menu with all the playlists
         val songId = holder.song_item.songID.text.toString().toInt()
         val songDir = db?.getSongDirBySongId(songId) ?: ""
@@ -217,7 +220,6 @@ class SongBrowserActivity : AppCompatActivity() {
             Log.i(TAG,"Attempting to add $songDir to playlist")
             val playlistMenu = PopupMenu(this, holder.itemView)
             val playlistList = db?.getAllPlaylistIds() ?: intArrayOf()
-            Log.i(TAG, "Num Playlists: ${playlistList.size}")
             for(playlistID in playlistList){
                 val playlistName = db?.getPlaylistNameByPlaylistId(playlistID) ?: "test"
                 playlistMenu.menu.add(playlistName)
@@ -225,12 +227,37 @@ class SongBrowserActivity : AppCompatActivity() {
 
             playlistMenu.show()
             playlistMenu.setOnMenuItemClickListener { menuItem ->
-                //TODO: Add onClick listener to add song to playlist
                 val playlistName = menuItem.title.toString()
                 val playlistID = db?.getPlaylistIDByPlaylistName(playlistName) ?: 0
                 val songID = holder.song_item.songID.text.toString().toInt()
                 if(playlistID >= 1 && songID >= 1){
                     db?.addSongToPlaylist(playlistID, songID)
+                }
+                true
+            }
+        }
+    }
+
+    fun removePlaylistPopup(holder: SongBrowserAdapter.SongItemHolder){
+        //Shows a list of playlists to remove a song from
+        val songId = holder.song_item.songID.text.toString().toInt()
+        val songDir = db?.getSongDirBySongId(songId) ?: ""
+        if(songDir.length >= 0){
+            Log.i(TAG,"Attempting to remove $songDir from playlist")
+            val playlistMenu = PopupMenu(this, holder.itemView)
+            val playlistList = db?.getAllPlaylistIds() ?: intArrayOf()
+            for(playlistID in playlistList){
+                val playlistName = db?.getPlaylistNameByPlaylistId(playlistID) ?: "test"
+                playlistMenu.menu.add(playlistName)
+            }
+
+            playlistMenu.show()
+            playlistMenu.setOnMenuItemClickListener { menuItem ->
+                val playlistName = menuItem.title.toString()
+                val playlistID = db?.getPlaylistIDByPlaylistName(playlistName) ?: 0
+                val songID = holder.song_item.songID.text.toString().toInt()
+                if(playlistID >= 1 && songID >= 1){
+                    db?.removeSongFromPlaylist(playlistID, songID)
                 }
                 true
             }
@@ -261,6 +288,10 @@ class SongBrowserActivity : AppCompatActivity() {
         }
         R.id.mainClearCache -> {
             mp?.clearCache()
+            true
+        }
+        R.id.mainRescanPlaylists -> {
+            mp?.rescanPlaylists()
             true
         }
         R.id.mainRescanLibrary -> {

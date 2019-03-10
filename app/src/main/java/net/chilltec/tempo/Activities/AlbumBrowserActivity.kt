@@ -220,6 +220,10 @@ class AlbumBrowserActivity : AppCompatActivity() {
             mp?.clearCache()
             true
         }
+        R.id.mainRescanPlaylists -> {
+            mp?.rescanPlaylists()
+            true
+        }
         R.id.mainRescanLibrary -> {
             mp?.rescanLibrary()
             true

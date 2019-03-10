@@ -1,7 +1,10 @@
 package net.chilltec.tempo.Services
 
 import android.app.Service
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.net.Uri
 import android.os.IBinder
 import android.os.*
@@ -43,8 +46,26 @@ class DatabaseService : Service() {
     val http = OkHttpClient()
     val gson = Gson()
 
+    private var mp: MediaService? = null
+    private var isBound: Boolean = false
+    private val mpConnection= object: ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as MediaService.LocalBinder
+            mp = binder.getService()
+            isBound = true
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            isBound = false
+        }
+    }
+
     override fun onCreate(){
         Log.i(TAG, "Database Service Started")
+        //Bind the MediaService & DatabaseService
+        val mpIntent = Intent(this, MediaService::class.java)
+        bindService(mpIntent, mpConnection, Context.BIND_AUTO_CREATE)
+
         //Init main databases (artist, album, song), updating from server if required
         updateDatabases()
 
@@ -309,6 +330,7 @@ class DatabaseService : Service() {
                 override fun onResponse(call: Call, response: Response) {
                     Log.i(TAG, "Success adding $songName to $playlistName")
                     response.body()?.close()
+                    mp?.rescanPlaylists()
                 }
             })
         }).start()
@@ -335,6 +357,7 @@ class DatabaseService : Service() {
                 override fun onResponse(call: Call, response: Response) {
                     Log.i(TAG, "Success removing $songName to $playlistName")
                     response.body()?.close()
+                    mp?.rescanPlaylists()
                 }
             })
         }).start()

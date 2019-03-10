@@ -2,4 +2,5 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item android:title="@string/add_to_playlist" android:id="@+id/songItemAddToPlaylist"/>
+    <item android:title="@string/remove_from_playlist" android:id="@+id/songItemRemoveFromPlaylist"/>
 </menu>
