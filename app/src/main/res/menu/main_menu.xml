@@ -18,7 +18,7 @@
     <item
             android:id="@+id/mainSettings"
             android:icon="@drawable/ic_settings_black_24dp"
-            android:title="Settings"
+            android:title="@string/settings"
             app:showAsAction="never"/>
     <!--Clear Cache-->
     <item
@@ -26,6 +26,7 @@
             android:title="@string/clear_cache_setting_lable"
             app:showAsAction="never"/>
     <!--Rescan Library Files-->
+    <item android:title="@string/rescan_playlists" android:id="@+id/mainRescanPlaylists"/>
     <item
             android:id="@+id/mainRescanLibrary"
             android:title="@string/rescan_library_setting_lable"

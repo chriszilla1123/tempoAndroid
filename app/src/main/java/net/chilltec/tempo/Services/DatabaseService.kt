@@ -49,7 +49,7 @@ class DatabaseService : Service() {
         updateDatabases()
 
         //Init playlist databases, updating from server if requried
-        updatePlaylistDB()
+        updatePlaylistDatabases()
     }
 
     override fun onBind(intent: Intent): IBinder {
@@ -308,6 +308,7 @@ class DatabaseService : Service() {
                 }
                 override fun onResponse(call: Call, response: Response) {
                     Log.i(TAG, "Success adding $songName to $playlistName")
+                    response.body()?.close()
                 }
             })
         }).start()
@@ -333,6 +334,7 @@ class DatabaseService : Service() {
                 }
                 override fun onResponse(call: Call, response: Response) {
                     Log.i(TAG, "Success removing $songName to $playlistName")
+                    response.body()?.close()
                 }
             })
         }).start()
@@ -391,6 +393,7 @@ class DatabaseService : Service() {
                 override fun onFailure(call: Call, e: IOException){}
                 override fun onResponse(call: Call, response: Response){
                     val remoteTimestamp = response.body()?.string() ?: "0"
+                    response.body()?.close()
                     //An update is only required if the timestamps do not match
                     val needsUpdate = remoteTimestamp != localTimestamp
 
@@ -405,7 +408,8 @@ class DatabaseService : Service() {
                         http.newCall(artistRequest).enqueue(object : Callback {
                             override fun onFailure(call: Call, e: IOException){}
                             override fun onResponse(call: Call, response: Response){
-                                var respString = response.body()?.string()
+                                val respString = response.body()?.string()
+                                response.body()?.close()
                                 artistsFile.writeText(respString.toString())
                                 artistsDB = gson.fromJson<Array<Artist>>(artistsFile.readText(),
                                     object: TypeToken<Array<Artist>>(){}.type)
@@ -417,7 +421,8 @@ class DatabaseService : Service() {
                         http.newCall(albumRequest).enqueue(object : Callback {
                             override fun onFailure(call: Call, e: IOException){}
                             override fun onResponse(call: Call, response: Response){
-                                var respString = response.body()?.string()
+                                val respString = response.body()?.string()
+                                response.body()?.close()
                                 albumsFile.writeText(respString.toString())
                                 albumsDB = gson.fromJson<Array<Album>>(albumsFile.readText(),
                                     object: TypeToken<Array<Album>>(){}.type)
@@ -430,7 +435,8 @@ class DatabaseService : Service() {
                         http.newCall(songRequest).enqueue(object : Callback {
                             override fun onFailure(call: Call, e: IOException){}
                             override fun onResponse(call: Call, response: Response){
-                                var respString = response.body()?.string()
+                                val respString = response.body()?.string()
+                                response.body()?.close()
                                 songsFile.writeText(respString.toString())
                                 songsDB = gson.fromJson<Array<Song>>(songsFile.readText(),
                                     object: TypeToken<Array<Song>>(){}.type)
@@ -473,7 +479,7 @@ class DatabaseService : Service() {
         }).start()
     }
     //Update playlist databases
-    fun updatePlaylistDB(){
+    fun updatePlaylistDatabases(){
         Thread(Runnable{
             //Check if playlist databases need update
             val playlistsFile = File(filesDir, playlistsFileLoc)
@@ -493,6 +499,7 @@ class DatabaseService : Service() {
                 override fun onFailure(call: Call, e: IOException){}
                 override fun onResponse(call: Call, response: Response) {
                     val remoteTimestamp = response.body()?.string() ?: "0"
+                    response.body()?.close()
                     //Only needs update if timestamps are different
                     val needsUpdate = (remoteTimestamp != localTimestamp)
                     if(!needsUpdate){
@@ -507,7 +514,8 @@ class DatabaseService : Service() {
                         http.newCall(playlistRequest).enqueue(object : Callback {
                             override fun onFailure(call: Call, e: IOException){}
                             override fun onResponse(call: Call, response: Response) {
-                                var respString = response.body()?.string()
+                                val respString = response.body()?.string()
+                                response.body()?.close()
                                 playlistsFile.writeText(respString.toString())
                                 playlistsDB =  gson.fromJson<Array<Playlist>>(playlistsFile.readText(),
                                     object: TypeToken<Array<Playlist>>(){}.type)
@@ -521,7 +529,8 @@ class DatabaseService : Service() {
                         http.newCall(playlistSongRequest).enqueue(object : Callback {
                             override fun onFailure(call: Call, e: IOException){}
                             override fun onResponse(call: Call, response: Response) {
-                                var respString = response.body()?.string()
+                                val respString = response.body()?.string()
+                                response.body()?.close()
                                 playlistSongsFile.writeText(respString.toString())
                                 playlistSongsDB =  gson.fromJson<Array<PlaylistSong>>(playlistSongsFile.readText(),
                                     object: TypeToken<Array<PlaylistSong>>(){}.type)
@@ -590,7 +599,8 @@ class DatabaseService : Service() {
                 http.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException){ numDownloaded++ }
                     override fun onResponse(call: Call, response: Response){
-                        var respBytes = response.body()?.bytes() ?: byteArrayOf()
+                        val respBytes = response.body()?.bytes() ?: byteArrayOf()
+                        response.body()?.close()
                         if(respBytes.size == 0){
                             Log.i(TAG, "ERROR downloading artwork for album id ${album.id}")
                             artFile.delete()

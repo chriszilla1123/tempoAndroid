@@ -191,7 +191,8 @@ class MediaService : Service() {
         http.newCall(curRequest).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {}
             override fun onResponse(call: Call, response: Response) {
-                var respBytes = response.body()?.bytes() ?: byteArrayOf()
+                val respBytes = response.body()?.bytes() ?: byteArrayOf()
+                response.body()?.close()
                 if (respBytes.size == 0) {
                     Log.i(TAG, "ERROR downloading song $songId to cache")
                 } else {
@@ -499,7 +500,22 @@ class MediaService : Service() {
         val request = Request.Builder().url(url).build()
         http.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {}
-            override fun onResponse(call: Call, response: Response) {}
+            override fun onResponse(call: Call, response: Response) {
+                response.body()?.close()
+                db?.updateDatabases()
+            }
+        })
+    }
+    fun rescanPlaylists() {
+        Log.i(TAG, "Requesting the server to rescan playlists")
+        val url = "$baseUrl/rescanPlaylists"
+        val request = Request.Builder().url(url).build()
+        http.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {}
+            override fun onResponse(call: Call, response: Response) {
+                response.body()?.close()
+                db?.updatePlaylistDatabases()
+            }
         })
     }
 
