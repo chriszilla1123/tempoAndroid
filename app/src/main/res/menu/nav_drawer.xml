@@ -14,6 +14,8 @@
                 android:id="@+id/nav_songs"
                 android:icon="@drawable/ic_music_note_black_24dp"
                 android:title="@string/songs"/>
+        <item android:title="@string/playlists" android:id="@+id/nav_playlists"
+              android:icon="@drawable/ic_playlist_play_black_24dp"/>
         <item
                 android:id="@+id/nav_player"
                 android:icon="@drawable/ic_play_arrow_black_24dp"

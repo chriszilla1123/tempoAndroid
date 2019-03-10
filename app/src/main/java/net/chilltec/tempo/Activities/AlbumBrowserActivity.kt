@@ -102,6 +102,13 @@ class AlbumBrowserActivity : AppCompatActivity() {
             intent.putExtra("title", "All Songs")
             startActivity(intent)
         }
+        fun openPlaylistBrowser(){
+            val allPlaylists = db?.getAllPlaylistIds()
+            val intent = Intent(this, PlaylistBrowserActivity::class.java)
+            intent.putExtra("playlistList", allPlaylists)
+            intent.putExtra("title", "All Playlists")
+            startActivity(intent)
+        }
         fun openPlayer(){
             val intent = Intent(this, PlayerActivity::class.java)
             startActivity(intent)
@@ -112,18 +119,11 @@ class AlbumBrowserActivity : AppCompatActivity() {
         album_navview.setNavigationItemSelectedListener { menuItem ->
             val id = menuItem.itemId
             when(id){
-                R.id.nav_artists -> {
-                    openArtistBrowser()
-                }
-                R.id.nav_albums -> {
-                    openAlbumBrowser()
-                }
-                R.id.nav_songs -> {
-                    openSongBrowser()
-                }
-                R.id.nav_player -> {
-                    openPlayer()
-                }
+                R.id.nav_artists -> { openArtistBrowser() }
+                R.id.nav_albums -> { openAlbumBrowser() }
+                R.id.nav_songs -> { openSongBrowser() }
+                R.id.nav_playlists -> { openPlaylistBrowser() }
+                R.id.nav_player -> { openPlayer() }
             }
             true
         }

@@ -103,6 +103,13 @@ class PlaylistBrowserActivity : AppCompatActivity() {
             intent.putExtra("title", "All Songs")
             startActivity(intent)
         }
+        fun openPlaylistBrowser(){
+            val allPlaylists = db?.getAllPlaylistIds()
+            val intent = Intent(this, PlaylistBrowserActivity::class.java)
+            intent.putExtra("playlistList", allPlaylists)
+            intent.putExtra("title", "All Playlists")
+            startActivity(intent)
+        }
         fun openPlayer(){
             val intent = Intent(this, PlayerActivity::class.java)
             startActivity(intent)
@@ -113,18 +120,11 @@ class PlaylistBrowserActivity : AppCompatActivity() {
         playlist_navview.setNavigationItemSelectedListener { menuItem ->
             val id = menuItem.itemId
             when(id){
-                R.id.nav_artists -> {
-                    openArtistBrowser()
-                }
-                R.id.nav_albums -> {
-                    openAlbumBrowser()
-                }
-                R.id.nav_songs -> {
-                    openSongBrowser()
-                }
-                R.id.nav_player -> {
-                    openPlayer()
-                }
+                R.id.nav_artists -> { openArtistBrowser() }
+                R.id.nav_albums -> { openAlbumBrowser() }
+                R.id.nav_songs -> { openSongBrowser() }
+                R.id.nav_playlists -> { openPlaylistBrowser() }
+                R.id.nav_player -> { openPlayer() }
             }
             true
         }
@@ -192,7 +192,7 @@ class PlaylistBrowserActivity : AppCompatActivity() {
     }
     override fun onOptionsItemSelected(item: MenuItem?) = when(item?.itemId) {
         android.R.id.home -> {
-            artist_navdrawer.openDrawer(GravityCompat.START)
+            playlist_navdrawer.openDrawer(GravityCompat.START)
             true
         }
         R.id.mainPlayer -> {

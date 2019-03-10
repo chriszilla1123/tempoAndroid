@@ -16,7 +16,7 @@ import net.chilltec.tempo.DataTypes.*
 import okhttp3.*
 import java.io.File
 import java.io.IOException
-
+import java.net.URLEncoder
 
 
 class DatabaseService : Service() {
@@ -34,6 +34,7 @@ class DatabaseService : Service() {
     private val playlistsFileLoc = "playlists.db"
     private val playlistSongsFileLoc = "playlistSongs.db"
     private val databaseTimestampFileLoc = "databaseTimestamp.txt"
+    private val playlistTimestampFileLoc = "playlistTimestamp.txt"
     private var isInitialized: Boolean = false
     private var isArtistsDBInit: Boolean = false
     private var isAlbumsDBInit: Boolean = false
@@ -84,6 +85,7 @@ class DatabaseService : Service() {
             val playlistsFile = File(filesDir, playlistsFileLoc)
             val playlistSongsFile = File(filesDir, playlistSongsFileLoc)
             val databaseTimestampFile = File(filesDir, databaseTimestampFileLoc)
+            val playlistTimestampFile = File(filesDir, playlistTimestampFileLoc)
 
             //Start Initialize Databases
             //Check if an update is required
@@ -95,7 +97,7 @@ class DatabaseService : Service() {
             val localTimestamp = databaseTimestampFile.readText()
 
             //Get timestamp for the remote database
-            val remoteTimestampUrl = "$baseURL/getLastUpdate"
+            val remoteTimestampUrl = "$baseURL/getLastLibraryUpdate"
             val request = Request.Builder().url(remoteTimestampUrl).build()
             http.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException){}
@@ -307,6 +309,11 @@ class DatabaseService : Service() {
         if(id < 1) return null
         return songsDB[id-1].title
     }
+    fun getSongDirBySongId(id: Int): String? {
+        if(id < 1) return null
+        if(id > numSongs()) return null
+        return songsDB[id-1].directory
+    }
     fun songHasArtwork(id: Int): Boolean{
         //Returns true if the given song's album has artwork
         if(id < 1) return false
@@ -418,6 +425,69 @@ class DatabaseService : Service() {
             if(song.playlist == id) songList.add(song.songId)
         }
         return songList.toIntArray()
+    }
+    fun getPlaylistNameByPlaylistId(id: Int): String? {
+        if(id < 1) return null
+        if(id > numPlaylists()) return null
+        return playlistsDB[id - 1].playlist
+    }
+    fun getPlaylistIDByPlaylistName(name: String): Int {
+        for(playlist in playlistsDB){
+            if(playlist.playlist == name) return playlist.id
+        }
+        return 0
+    }
+    fun addSongToPlaylist(playlistID: Int, songID: Int) {
+        //Adds a given songID to the given playlistID
+        //Endpoint requires a playlist name, and song directory
+        Thread(Runnable{
+            if(playlistID < 1 || playlistID > numPlaylists()) return@Runnable
+            if(songID < 1 || songID > numSongs()) return@Runnable
+            val http = OkHttpClient()
+            val playlistName = playlistsDB[playlistID - 1].playlist
+            val songDir = songsDB[songID - 1].directory
+            val songName = songsDB[songID - 1].title
+            val urlPlaylistName = URLEncoder.encode(playlistName, "UTF-8")
+            val urlSongDir = URLEncoder.encode(songDir, "UTF-8")
+            val url = ("$baseURL/addSongToPlaylist"
+                    + "?playlistName=$urlPlaylistName&songDir=$urlSongDir")
+            Log.i(TAG, "Attempting to add $songName to $playlistName")
+            val request = Request.Builder().url(url).build()
+            http.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.i(TAG, "ERROR adding $songName to $playlistName")
+                }
+                override fun onResponse(call: Call, response: Response) {
+                    Log.i(TAG, "Success adding $songName to $playlistName")
+                }
+            })
+        }).start()
+    }
+    fun removeSongFromPlaylist(playlistID: Int, songID: Int) {
+        //Removes a given songID from the given playlistID
+        //Endpoint requires a playlist name, and song directory
+        Thread(Runnable{
+            if(playlistID < 1 || playlistID > numPlaylists()) return@Runnable
+            if(songID < 1 || songID > numSongs()) return@Runnable
+            val http = OkHttpClient()
+            val playlistName = playlistsDB[playlistID - 1].playlist
+            val songDir = songsDB[songID - 1].directory
+            val songName = songsDB[songID - 1].title
+            val urlPlaylistName = URLEncoder.encode(playlistName, "UTF-8")
+            val urlSongDir = URLEncoder.encode(songDir, "UTF-8")
+            val url = ("$baseURL/removeSongFromPlaylist"
+                    + "?playlistName=$urlPlaylistName&songDir=$urlSongDir")
+            Log.i(TAG, "Attempting to remove $songName to $playlistName")
+            val request = Request.Builder().url(url).build()
+            http.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.i(TAG, "ERROR removing $songName to $playlistName")
+                }
+                override fun onResponse(call: Call, response: Response) {
+                    Log.i(TAG, "Success removing $songName to $playlistName")
+                }
+            })
+        }).start()
     }
     //End Info by Playlist ID
 

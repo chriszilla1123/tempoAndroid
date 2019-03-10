@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.IBinder
 import android.support.v4.view.GravityCompat
 import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.PopupMenu
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
@@ -21,12 +22,14 @@ import net.chilltec.tempo.Services.DatabaseService
 import net.chilltec.tempo.Services.MediaService
 import net.chilltec.tempo.R
 import net.chilltec.tempo.Adapters.SongBrowserAdapter
+import net.chilltec.tempo.R.id.songItemAddToPlaylist
 
 class SongBrowserActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var viewManager: RecyclerView.LayoutManager
     private lateinit var songList: IntArray
+    private val TAG = "SongBrowserActivity"
 
     private var mp: MediaService? = null
     private var isBound: Boolean = false
@@ -100,6 +103,13 @@ class SongBrowserActivity : AppCompatActivity() {
             intent.putExtra("title", "All Songs")
             startActivity(intent)
         }
+        fun openPlaylistBrowser(){
+            val allPlaylists = db?.getAllPlaylistIds()
+            val intent = Intent(this, PlaylistBrowserActivity::class.java)
+            intent.putExtra("playlistList", allPlaylists)
+            intent.putExtra("title", "All Playlists")
+            startActivity(intent)
+        }
         fun openPlayer(){
             val intent = Intent(this, PlayerActivity::class.java)
             startActivity(intent)
@@ -110,18 +120,11 @@ class SongBrowserActivity : AppCompatActivity() {
         song_navview.setNavigationItemSelectedListener { menuItem ->
             val id = menuItem.itemId
             when(id){
-                R.id.nav_artists -> {
-                    openArtistBrowser()
-                }
-                R.id.nav_albums -> {
-                    openAlbumBrowser()
-                }
-                R.id.nav_songs -> {
-                    openSongBrowser()
-                }
-                R.id.nav_player -> {
-                    openPlayer()
-                }
+                R.id.nav_artists -> { openArtistBrowser() }
+                R.id.nav_albums -> { openAlbumBrowser() }
+                R.id.nav_songs -> { openSongBrowser() }
+                R.id.nav_playlists -> { openPlaylistBrowser() }
+                R.id.nav_player -> { openPlayer() }
             }
             true
         }
@@ -156,8 +159,7 @@ class SongBrowserActivity : AppCompatActivity() {
 
     override fun onPause(){
         super.onPause()
-        unbindService(dbConnection)
-        unbindService(mpConnection)
+
     }
 
     override fun onResume(){
@@ -170,6 +172,13 @@ class SongBrowserActivity : AppCompatActivity() {
         bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
     }
 
+    override fun onDestroy(){
+        super.onDestroy()
+        unbindService(dbConnection)
+        unbindService(mpConnection)
+        Log.i(TAG, "Unbinding...")
+    }
+
     fun onClickCalled(holder: SongBrowserAdapter.SongItemHolder){
         val songId: Int = holder.song_item.songID.text.toString().toInt()
         mp?.setSongList(songList)
@@ -179,7 +188,53 @@ class SongBrowserActivity : AppCompatActivity() {
     fun onLongClickCalled(holder: SongBrowserAdapter.SongItemHolder): Boolean{
         val songId: Int = holder.song_item.songID.text.toString().toInt()
         Log.i("SongBrowserActivity", "Long Click $songId")
+        createSongPopup(holder)
         return true
+    }
+
+    fun createSongPopup(holder: SongBrowserAdapter.SongItemHolder){
+        val menu = PopupMenu(this, holder.itemView)
+        menu.inflate(R.menu.song_item_menu)
+        menu.show()
+        menu.setOnMenuItemClickListener{
+            when(it.itemId){
+                songItemAddToPlaylist -> {
+                    playlistPopup(holder)
+                    true
+                }
+                else -> {
+                    false
+                }
+            }
+        }
+    }
+
+    fun playlistPopup(holder: SongBrowserAdapter.SongItemHolder){
+        //Show a popup menu with all the playlists
+        val songId = holder.song_item.songID.text.toString().toInt()
+        val songDir = db?.getSongDirBySongId(songId) ?: ""
+        if(songDir.length >= 0){
+            Log.i(TAG,"Attempting to add $songDir to playlist")
+            val playlistMenu = PopupMenu(this, holder.itemView)
+            val playlistList = db?.getAllPlaylistIds() ?: intArrayOf()
+            Log.i(TAG, "Num Playlists: ${playlistList.size}")
+            for(playlistID in playlistList){
+                val playlistName = db?.getPlaylistNameByPlaylistId(playlistID) ?: "test"
+                playlistMenu.menu.add(playlistName)
+            }
+
+            playlistMenu.show()
+            playlistMenu.setOnMenuItemClickListener { menuItem ->
+                //TODO: Add onClick listener to add song to playlist
+                val playlistName = menuItem.title.toString()
+                val playlistID = db?.getPlaylistIDByPlaylistName(playlistName) ?: 0
+                val songID = holder.song_item.songID.text.toString().toInt()
+                if(playlistID >= 1 && songID >= 1){
+                    db?.addSongToPlaylist(playlistID, songID)
+                }
+                true
+            }
+        }
     }
 
     fun endActivity(){

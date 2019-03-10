@@ -123,18 +123,11 @@ class MainActivity : AppCompatActivity()  {
         main_navview.setNavigationItemSelectedListener { menuItem ->
             val id = menuItem.itemId
             when(id){
-                nav_artists -> {
-                    openArtistBrowser()
-                }
-                nav_albums -> {
-                    openAlbumBrowser()
-                }
-                nav_songs -> {
-                    openSongBrowser()
-                }
-                nav_player -> {
-                    openPlayer()
-                }
+                nav_artists -> { openArtistBrowser() }
+                nav_albums -> { openAlbumBrowser() }
+                nav_songs -> { openSongBrowser() }
+                nav_playlists -> { openPlaylistBrowser() }
+                nav_player -> { openPlayer() }
             }
             true
         }

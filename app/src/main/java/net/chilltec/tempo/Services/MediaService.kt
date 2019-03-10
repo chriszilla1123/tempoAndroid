@@ -91,6 +91,7 @@ class MediaService : Service() {
     }
     override fun onDestroy() {
         Log.i(TAG, "Service onDestroy")
+        mp.release()
         unregisterReceiver(noiseReceiver)
         unbindService(DBconnection)
     }
@@ -122,6 +123,8 @@ class MediaService : Service() {
                 control_next()
             }
             setOnErrorListener { mp, what, extra ->
+                Log.i(TAG, "onError")
+                Log.i(TAG, "${what.toString()}, $extra")
                 mp.reset()
                 true
             }
@@ -139,7 +142,7 @@ class MediaService : Service() {
             updateCurNextSong(songID)
             setMetadata(songID)
             if(isCached(curSong)) {
-                Log.i(TAG, "Playing song $songID from cache")
+                Log.i(TAG, "Playing song $songID from Local Cache")
                 //Get file, and return if it doesn't exist
                 val songFile = getSongFile(songID) ?: return@Runnable
                 playSongFromFile(songFile)
@@ -147,7 +150,7 @@ class MediaService : Service() {
             else{
                 //Start streaming the song, then download it to cache
                 streamSong(songID)
-                Log.i(TAG, "Playing song $songID from stream")
+                Log.i(TAG, "Playing song $songID from Remote Stream")
                 if(force){
                     cacheQueue.clear()
                     cacheQueue.add(curSong)
@@ -179,7 +182,7 @@ class MediaService : Service() {
         val songUrl: String = if (isWifiConnected) { "$baseUrl/getSongById/$songId" }
                                 else { "$baseUrl/getLowSongById/$songId" }
         if (songFile.exists()) { songFile.delete() }
-        Log.i(TAG, "Requesting song $songId from $songUrl")
+        Log.i(TAG, "Requesting song $songId from $songUrl to Local Cache")
         this.runOnUiThread {
             toast("Downloading song...")
         }
@@ -200,14 +203,15 @@ class MediaService : Service() {
         })
     }
     fun streamSong(id: Int){
+        val url = "$baseUrl/getSongById/$id"
         try {
             isStreaming = true
-            var url = "$baseUrl/getSongById/$id"
             playerInit()
             mp.setDataSource(url)
             mp.prepareAsync()
         } catch(e: Exception){
-
+            Log.i(TAG, "Streaming Failed")
+            e.printStackTrace()
         }
     }
     fun playSongFromFile(file: File): Boolean{
