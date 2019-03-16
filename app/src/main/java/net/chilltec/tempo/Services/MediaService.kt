@@ -117,6 +117,7 @@ class MediaService : Service() {
                 Log.i(TAG, "Song prepared")
                 mp.start()
                 sendSongUpdateBroadcast()
+                updateNotification()
             }
             setOnCompletionListener {
                 Log.i(TAG, "onComplete")
