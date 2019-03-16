@@ -13,7 +13,9 @@ import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_album_browser.*
+import kotlinx.android.synthetic.main.album_item.*
 import kotlinx.android.synthetic.main.album_item.view.*
 import net.chilltec.tempo.*
 import net.chilltec.tempo.Adapters.AlbumBrowserAdapter
@@ -32,6 +34,7 @@ class AlbumBrowserActivity : AppCompatActivity() {
     private lateinit var albumsDB: Array<Album>
     private lateinit var songsDB: Array<Song>
     private lateinit var albumArtList: List<File?>
+    private var isArtworkListInit: Boolean = false
 
     private val ref = this
 
@@ -40,7 +43,7 @@ class AlbumBrowserActivity : AppCompatActivity() {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as DatabaseService.LocalBinder
             db = binder.getService()
-            albumArtList = db?.getAlbumArtList() ?: listOf<File>() //May be empty! check before using
+            loadAlbumArtwork()
             loadAdapter() //Must be called after the database mpConnection is established
         }
 
@@ -143,7 +146,7 @@ class AlbumBrowserActivity : AppCompatActivity() {
         //viewManager = LinearLayoutManager(this)
         val numColumns = 2
         viewManager = GridLayoutManager(this, numColumns)
-        viewAdapter = AlbumBrowserAdapter(artistsDB, albumsDB, albumList, albumArtList, ref)
+        viewAdapter = AlbumBrowserAdapter(artistsDB, albumsDB, albumList, ref)
 
         recyclerView = AlbumBrowser.apply{
             //Only if changes do not effect size
@@ -233,4 +236,26 @@ class AlbumBrowserActivity : AppCompatActivity() {
         }
     }
     //end init toolbar
+
+    private fun loadAlbumArtwork(){
+        //Loads the album artwork files from the database service
+        Thread(Runnable{
+            albumArtList = db?.getAlbumArtList() ?: listOf<File>() //May be empty! check before using
+            isArtworkListInit = true
+        }).start()
+    }
+    fun setAlbumArtwork(holder: AlbumBrowserAdapter.AlbumItemHolder, albumIndex: Int){
+        //Sets the album artwork for a given album item
+        Thread(Runnable{
+            if(albumArtList.isNotEmpty()){
+                val file = albumArtList[albumIndex]
+                if(file != null){
+                    val img = Picasso.get().load(file).fit().centerCrop()
+                    holder.album_item.post{
+                        img.into(holder.album_item.albumArt)
+                    }
+                }
+            }
+        }).start()
+    }
 }

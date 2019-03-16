@@ -1,25 +1,20 @@
 package net.chilltec.tempo.Adapters
 
-import android.net.Uri
 import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.album_item.view.*
 import net.chilltec.tempo.Activities.AlbumBrowserActivity
 import net.chilltec.tempo.DataTypes.Album
 import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.R
-import java.io.File
 
 
 
 class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
                           val albumsDB: Array<Album>,
                           val albumList: IntArray,
-                          val albumArtList: List<File?>, //albumArtList may be empty, check before using.
                           val context: AlbumBrowserActivity
 ): RecyclerView.Adapter<AlbumBrowserAdapter.AlbumItemHolder>(){
 
@@ -43,18 +38,6 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
         holder.album_item.albumLable.text = albumsDB[albumIndex].album
         holder.album_item.albumArtistLable.text = artistsDB[artistIndex].artist
 
-        Thread(Runnable {
-            if(albumArtList.isNotEmpty()){
-                //holder.album_item.albumArt.setImageURI(Uri.fromFile(albumArtList[albumIndex]))
-                val file = albumArtList[albumIndex]
-                if(file != null){
-                    holder.album_item.post{
-                        Picasso.get().load(file).fit().centerCrop().into(holder.album_item.albumArt)
-                    }
-                }
-            }
-        }).start()
-
         holder.album_item.setOnClickListener{
             //Pass the holder to the activity to handle to onClick event
             context.onClickHandler(holder)
@@ -64,6 +47,7 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
             context.onLongClickHandler(holder)
         }
         holder.album_item.albumLable.bringToFront()
+        context.setAlbumArtwork(holder, albumIndex)
     }
 
     //Return the size of the dataset, the number of albums

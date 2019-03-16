@@ -287,7 +287,6 @@ class PlayerActivity : AppCompatActivity() {
         val songAlbum: String = db?.getAlbumBySongId(songID) ?: ""
         val songTitle: String = db?.getTitleBySongId(songID) ?: ""
         val songDuration: Int = mp?.getCurrentDuration() ?: 100
-        val hasArtwork = db?.songHasArtwork(songID) ?: false
 
         if (songArtist.length == 0) {
             playerArtistAlbumLable.text = ""
@@ -307,17 +306,25 @@ class PlayerActivity : AppCompatActivity() {
         seekBar.max = songDurationInSeconds
         playerMaxTimeLable.text = durationDisplay
 
-        if (hasArtwork) {
-            val albumArtUri = db?.getArtworkUriBySongId(songID)
-            if (albumArtUri != null) {
-                playerArtwork.setImageURI(albumArtUri)
-            }
-        } else {
-            playerArtwork.setImageResource(R.drawable.ic_album_black_24dp)
-        }
         updatePlayButton()
+        getArtwork()
     }
-
+    private fun getArtwork(){
+        //Loads album artwork for the currently playing song, if available.
+        Thread(Runnable{
+            val songID: Int = mp?.getCurSong() ?: -1
+            val hasArtwork = db?.songHasArtwork(songID) ?: false
+            if (hasArtwork) {
+                val albumArtUri = db?.getArtworkUriBySongId(songID)
+                if (albumArtUri != null) {
+                    playerArtwork.setImageURI(albumArtUri)
+                }
+            }
+            else {
+                playerArtwork.setImageResource(R.drawable.ic_album_black_24dp)
+            }
+        }).start()
+    }
     private fun updatePlayButton() {
         //Sets play button text to "PLAY" is song is paused
         //Sets play button to "PAUSE" is song is playing

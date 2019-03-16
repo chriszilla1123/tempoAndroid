@@ -646,6 +646,7 @@ class DatabaseService : Service() {
     }
 
     fun getAlbumArtList(): List<File?>{
+        //Can block UI, call from inside non-UI thread
         var albumList = mutableListOf<File?>()
         var artDirLoc = filesDir.absolutePath + File.separator + "artwork"
         for(album in albumsDB){
