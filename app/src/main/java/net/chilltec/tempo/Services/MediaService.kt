@@ -155,6 +155,7 @@ class MediaService : Service() {
                 if(force){
                     cacheQueue.clear()
                     cacheQueue.add(curSong)
+                    cacheQueue
                     getInternetSong()
                 }
                 else if(curSong !in cacheQueue){
@@ -205,6 +206,11 @@ class MediaService : Service() {
                 }
             }
         })
+    }
+    fun addSongToCacheQueue(id: Int){
+        if(id < 1) return
+        cacheQueue.add(id)
+        if(!curDownloading){ getInternetSong() }
     }
     fun streamSong(id: Int){
         val url = "$baseUrl/getSongById/$id"

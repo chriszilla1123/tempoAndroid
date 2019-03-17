@@ -41,16 +41,13 @@ class SongBrowserAdapter(val artistsDB: Array<Artist>,
         holder.song_item.songArtistLable.text = artistsDB[artistIndex].artist
         holder.song_item.songAlbumLable.text = albumsDB[albumIndex].album
 
-        context.showIsSongDownloaded(holder)
+        holder.song_item.setOnClickListener{ context.onClickCalled(holder) }
+        holder.song_item.setOnLongClickListener{ context.onLongClickCalled(holder) }
 
-        holder.song_item.setOnClickListener{
-            //Pass the holder back to the activity
-            context.onClickCalled(holder)
-        }
-
-        holder.song_item.setOnLongClickListener{
-            context.onLongClickCalled(holder)
-        }
+        //Song Download Icon color/onClick
+        context.showIsSongDownloaded(holder) //Sets icon to green if it's cached
+        holder.song_item.songDownloadIcon.bringToFront()
+        holder.song_item.songDownloadIcon.setOnClickListener{ context.onClickSongDownloadIcon(holder) }
     }
 
     //Return the size of the dataset, the number of songs

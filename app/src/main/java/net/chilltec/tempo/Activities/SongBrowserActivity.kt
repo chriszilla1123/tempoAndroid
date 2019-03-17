@@ -301,6 +301,11 @@ class SongBrowserActivity : AppCompatActivity() {
             }
         }).start()
     }
+    fun onClickSongDownloadIcon(holder: SongBrowserAdapter.SongItemHolder){
+        Log.i(TAG, "song download icon clicked")
+        val songID = holder.song_item.songID.text.toString().toInt()
+        mp?.addSongToCacheQueue(songID)
+    }
 
     fun endActivity(){
         this.unbindService(mpConnection)
