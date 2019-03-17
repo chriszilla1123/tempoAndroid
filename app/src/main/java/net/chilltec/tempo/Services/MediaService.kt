@@ -194,9 +194,10 @@ class MediaService : Service() {
             override fun onResponse(call: Call, response: Response) {
                 val respBytes = response.body()?.bytes() ?: byteArrayOf()
                 response.body()?.close()
-                if (respBytes.size == 0) {
-                    Log.i(TAG, "ERROR downloading song $songId to cache")
-                } else {
+                if (respBytes.size == 0 || response.code() != 200) {
+                    Log.i(TAG, "ERROR downloading song $songId to cache. code: ${response.code()}")
+                }
+                else {
                     songFile.writeBytes(respBytes)
                     Log.i(TAG, "Successfully cached song $songId")
                     if (cacheQueue.isNotEmpty()) getInternetSong()
