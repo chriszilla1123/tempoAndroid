@@ -415,10 +415,14 @@ class DatabaseService : Service() {
             http.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException){}
                 override fun onResponse(call: Call, response: Response){
-                    val remoteTimestamp = response.body()?.string() ?: "0"
+                    var remoteTimestamp = response.body()?.string() ?: "-1"
                     response.body()?.close()
+                    remoteTimestamp = (remoteTimestamp.toIntOrNull())?.toString() ?: (-1).toString()
                     //An update is only required if the timestamps do not match
-                    val needsUpdate = remoteTimestamp != localTimestamp
+                    var needsUpdate = remoteTimestamp != localTimestamp
+
+                    //If there was an error, can not update the database
+                    if(remoteTimestamp == "-1") { needsUpdate = false }
 
                     if(!needsUpdate){
                         Log.i(TAG, "Local database is up to date")
@@ -483,22 +487,27 @@ class DatabaseService : Service() {
     }
     fun initDatabases(){
         Thread(Runnable {
-            //Must only be called after main databases are downloaded.
-            val filesDir = this.filesDir
-            val artistsFile = File(filesDir, artistsFileLoc)
-            val albumsFile = File(filesDir, albumsFileLoc)
-            val songsFile = File(filesDir, songsFileLoc)
-            artistsDB = gson.fromJson<Array<Artist>>(artistsFile.readText(),
-                object: TypeToken<Array<Artist>>(){}.type)
-            albumsDB = gson.fromJson<Array<Album>>(albumsFile.readText(),
-                object: TypeToken<Array<Album>>(){}.type)
-            songsDB = gson.fromJson<Array<Song>>(songsFile.readText(),
-                object: TypeToken<Array<Song>>(){}.type)
-            isMainDBInit = true
-            isArtistsDBInit = true
-            isAlbumsDBInit = true
-            isSongsDBInit = true
-            Log.i(TAG,"Main databases are initilized")
+            try{
+                //Must only be called after main databases are downloaded.
+                val filesDir = this.filesDir
+                val artistsFile = File(filesDir, artistsFileLoc)
+                val albumsFile = File(filesDir, albumsFileLoc)
+                val songsFile = File(filesDir, songsFileLoc)
+                artistsDB = gson.fromJson<Array<Artist>>(artistsFile.readText(),
+                    object: TypeToken<Array<Artist>>(){}.type)
+                albumsDB = gson.fromJson<Array<Album>>(albumsFile.readText(),
+                    object: TypeToken<Array<Album>>(){}.type)
+                songsDB = gson.fromJson<Array<Song>>(songsFile.readText(),
+                    object: TypeToken<Array<Song>>(){}.type)
+                isMainDBInit = true
+                isArtistsDBInit = true
+                isAlbumsDBInit = true
+                isSongsDBInit = true
+                Log.i(TAG,"Main databases are initilized")
+            }
+            catch(e: Exception){
+                Log.i(TAG, "Error initializing local main databases")
+            }
         }).start()
     }
     //Update playlist databases
@@ -521,10 +530,15 @@ class DatabaseService : Service() {
             http.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException){}
                 override fun onResponse(call: Call, response: Response) {
-                    val remoteTimestamp = response.body()?.string() ?: "0"
+                    var remoteTimestamp = response.body()?.string() ?: "-1"
                     response.body()?.close()
+                    remoteTimestamp = (remoteTimestamp.toIntOrNull())?.toString() ?: (-1).toString()
                     //Only needs update if timestamps are different
-                    val needsUpdate = (remoteTimestamp != localTimestamp)
+                    var needsUpdate = (remoteTimestamp != localTimestamp)
+
+                    //Can't update if error occured
+                    if(remoteTimestamp == "-1"){ needsUpdate = false }
+
                     if(!needsUpdate){
                         Log.i(TAG, "Local playlist databases are up to date")
                         initPlaylistDatabases()
@@ -578,15 +592,20 @@ class DatabaseService : Service() {
     }
     fun initPlaylistDatabases(){
         Thread(Runnable{
-            val playlistsFile = File(filesDir, playlistsFileLoc)
-            val playlistSongsFile = File(filesDir, playlistSongsFileLoc)
-            playlistsDB = gson.fromJson<Array<Playlist>>(playlistsFile.readText(),
-                object: TypeToken<Array<Playlist>>(){}.type)
-            playlistSongsDB = gson.fromJson<Array<PlaylistSong>>(playlistSongsFile.readText(),
-                object: TypeToken<Array<PlaylistSong>>(){}.type)
-            isPlaylistsDBInit = true
-            isPlaylistSongsDBInit = true
-            Log.i(TAG, "Playlist databases are initilized")
+            try{
+                val playlistsFile = File(filesDir, playlistsFileLoc)
+                val playlistSongsFile = File(filesDir, playlistSongsFileLoc)
+                playlistsDB = gson.fromJson<Array<Playlist>>(playlistsFile.readText(),
+                    object: TypeToken<Array<Playlist>>(){}.type)
+                playlistSongsDB = gson.fromJson<Array<PlaylistSong>>(playlistSongsFile.readText(),
+                    object: TypeToken<Array<PlaylistSong>>(){}.type)
+                isPlaylistsDBInit = true
+                isPlaylistSongsDBInit = true
+                Log.i(TAG, "Playlist databases are initilized")
+            }
+            catch(e: Exception){
+                Log.i(TAG, "Error initilizing local playlist databases")
+            }
         }).start()
     }
     //End Update playlist databases
@@ -644,7 +663,6 @@ class DatabaseService : Service() {
         }
         return true
     }
-
     fun getAlbumArtList(): List<File?>{
         //Can block UI, call from inside non-UI thread
         var albumList = mutableListOf<File?>()
@@ -666,7 +684,6 @@ class DatabaseService : Service() {
         albumList.toList()
         return albumList
     }
-
     fun clearDirctory(dir: File){
         if(dir.isDirectory) {
             val children = dir.list()
