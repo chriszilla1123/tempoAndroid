@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.graphics.Color
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
@@ -28,7 +29,10 @@ class SongBrowserActivity : AppCompatActivity() {
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var viewManager: RecyclerView.LayoutManager
     private lateinit var songList: IntArray
+    private lateinit var cachedList: IntArray
     private val TAG = "SongBrowserActivity"
+
+    private var isCachedListReady: Boolean = false
 
     private var mp: MediaService? = null
     private var isBound: Boolean = false
@@ -37,6 +41,7 @@ class SongBrowserActivity : AppCompatActivity() {
             val binder = service as MediaService.LocalBinder
             mp = binder.getService()
             isBound = true
+            getCachedList()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -211,7 +216,6 @@ class SongBrowserActivity : AppCompatActivity() {
             }
         }
     }
-
     fun addPlaylistPopup(holder: SongBrowserAdapter.SongItemHolder){
         //Show a popup menu with all the playlists
         val songId = holder.song_item.songID.text.toString().toInt()
@@ -280,6 +284,22 @@ class SongBrowserActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+    private fun getCachedList(){
+        Thread(Runnable{
+            cachedList = mp?.getCachedSongList() ?: intArrayOf()
+            isCachedListReady = true
+        }).start()
+    }
+    fun showIsSongDownloaded(holder: SongBrowserAdapter.SongItemHolder){
+        Thread(Runnable{
+            while(!isCachedListReady) { Thread.sleep(10) }
+            val highlightColor = Color.GREEN
+            val songID = holder.song_item.songID.text.toString().toInt()
+            if(songID in cachedList){
+                holder.song_item.songDownloadIcon.setColorFilter(highlightColor)
+            }
+        }).start()
     }
 
     fun endActivity(){

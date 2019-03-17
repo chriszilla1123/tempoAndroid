@@ -241,6 +241,20 @@ class MediaService : Service() {
         val songFile = File(cacheDir, songFileLoc)
         return songFile.exists()
     }
+    //Cache info
+    fun getCachedSongList(): IntArray{
+        //Disc access, call this from inside non-UI thread
+        var songList = mutableListOf<Int>()
+        cacheDir.walkTopDown().forEach {
+            if(it.exists() &&  it.extension == "song"){
+                var songID = it.nameWithoutExtension.toIntOrNull() ?: -1
+                if(songID > 0){
+                    songList.add(songID)
+                }
+            }
+        }
+        return songList.toIntArray()
+    }
     fun clearCache() {
         //Deletes all song files that have been downloaded to cache
         Thread(Runnable {
@@ -263,6 +277,7 @@ class MediaService : Service() {
             Log.i(TAG, "Cleared ${sizeInMb}MB from $deletedFiles files in cache")
         }).start()
     }
+    //End Cache Info
     fun updateCurNextSong(id: Int) {
         //Sets the given id as the curSong id and updates nextSong
         if (songQueue.isEmpty()) return
