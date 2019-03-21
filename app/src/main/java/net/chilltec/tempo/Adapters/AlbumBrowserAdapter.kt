@@ -32,7 +32,7 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
     override fun onBindViewHolder(holder: AlbumItemHolder, position: Int) {
         val albumIndex = albumList[position] - 1
         val artistIndex = albumsDB[albumIndex].artist - 1
-        val albumID = albumsDB[albumIndex].id
+        val albumID = albumIndex + 1
 
         holder.album_item.albumID.text = (albumIndex + 1).toString()
         holder.album_item.albumLable.text = albumsDB[albumIndex].album
@@ -46,8 +46,11 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
         holder.album_item.setOnLongClickListener{
             context.onLongClickHandler(holder)
         }
+        holder.album_item.albumMenu.setOnClickListener {
+            context.albumMenuHandler(holder, albumID)
+        }
         holder.album_item.albumLable.bringToFront()
-        context.setAlbumArtwork(holder, albumIndex)
+        context.setAlbumArtwork(holder, albumID)
     }
 
     //Return the size of the dataset, the number of albums

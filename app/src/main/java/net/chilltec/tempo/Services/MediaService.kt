@@ -5,6 +5,7 @@ import android.content.*
 import android.graphics.Color
 import android.media.*
 import android.net.ConnectivityManager
+import android.net.Network
 import android.net.NetworkInfo
 import android.os.*
 import android.support.v4.app.NotificationCompat
@@ -562,7 +563,7 @@ class MediaService : Service() {
             val codePrev = KeyEvent.KEYCODE_MEDIA_PREVIOUS
             val codeStop = KeyEvent.KEYCODE_MEDIA_STOP
             val actionUp = KeyEvent.ACTION_UP
-            val actionDown = KeyEvent.ACTION_DOWN
+            //val actionDown = KeyEvent.ACTION_DOWN
             var event: KeyEvent? = mediaButtonEvent?.getParcelableExtra(Intent.EXTRA_KEY_EVENT)
             val keyCode = event?.keyCode ?: 0
 

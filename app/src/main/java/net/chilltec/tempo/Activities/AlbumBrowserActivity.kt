@@ -9,19 +9,20 @@ import android.os.Bundle
 import android.os.IBinder
 import android.support.v4.view.GravityCompat
 import android.support.v7.widget.GridLayoutManager
+import android.support.v7.widget.PopupMenu
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_album_browser.*
-import kotlinx.android.synthetic.main.album_item.*
 import kotlinx.android.synthetic.main.album_item.view.*
 import net.chilltec.tempo.*
 import net.chilltec.tempo.Adapters.AlbumBrowserAdapter
 import net.chilltec.tempo.DataTypes.Album
 import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Song
+import net.chilltec.tempo.R.id.albumItemMenuDownloadAlbum
 import net.chilltec.tempo.Services.DatabaseService
 import net.chilltec.tempo.Services.MediaService
 import java.io.File
@@ -35,6 +36,7 @@ class AlbumBrowserActivity : AppCompatActivity() {
     private lateinit var songsDB: Array<Song>
     private lateinit var albumArtList: List<File?>
     private var isArtworkListInit: Boolean = false
+    private var isDBConnected: Boolean = false
 
     private val ref = this
 
@@ -43,6 +45,7 @@ class AlbumBrowserActivity : AppCompatActivity() {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as DatabaseService.LocalBinder
             db = binder.getService()
+            isDBConnected = true
             loadAlbumArtwork()
             loadAdapter() //Must be called after the database mpConnection is established
         }
@@ -237,6 +240,7 @@ class AlbumBrowserActivity : AppCompatActivity() {
     }
     //end init toolbar
 
+    //Load and set artwork
     private fun loadAlbumArtwork(){
         //Loads the album artwork files from the database service
         Thread(Runnable{
@@ -244,12 +248,12 @@ class AlbumBrowserActivity : AppCompatActivity() {
             isArtworkListInit = true
         }).start()
     }
-    fun setAlbumArtwork(holder: AlbumBrowserAdapter.AlbumItemHolder, albumIndex: Int){
+    fun setAlbumArtwork(holder: AlbumBrowserAdapter.AlbumItemHolder, albumID: Int){
         //Sets the album artwork for a given album item
         Thread(Runnable{
             while(!isArtworkListInit){ Thread.sleep(100) }
             if(albumArtList.isNotEmpty()){
-                val file = albumArtList[albumIndex]
+                val file = albumArtList[albumID - 1]
                 if(file != null){
                     val img = Picasso.get().load(file).fit().centerCrop()
                     holder.album_item.post{
@@ -259,4 +263,31 @@ class AlbumBrowserActivity : AppCompatActivity() {
             }
         }).start()
     }
+
+    //Album menu
+    fun albumMenuHandler(holder: AlbumBrowserAdapter.AlbumItemHolder, albumID: Int){
+        val menu = PopupMenu(this, holder.itemView)
+        menu.inflate(R.menu.album_item_menu)
+        menu.show()
+        menu.setOnMenuItemClickListener {
+            when(it.itemId){
+                albumItemMenuDownloadAlbum -> {
+                    Thread(Runnable{
+                        if(!isDBConnected) { Thread.sleep(100) }
+                        val songList = db?.getSongListByAlbumId(albumID) ?: intArrayOf()
+                        if(songList.size != 0){
+                            for(songID: Int in songList){
+                                mp?.addSongToCacheQueue(songID)
+                            }
+                        }
+                    }).start()
+                    true
+                }
+                else -> {
+                    false
+                }
+            }
+        }
+    }
+
 }
