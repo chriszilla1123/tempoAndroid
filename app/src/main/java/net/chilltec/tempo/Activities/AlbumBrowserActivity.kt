@@ -247,6 +247,7 @@ class AlbumBrowserActivity : AppCompatActivity() {
     fun setAlbumArtwork(holder: AlbumBrowserAdapter.AlbumItemHolder, albumIndex: Int){
         //Sets the album artwork for a given album item
         Thread(Runnable{
+            while(!isArtworkListInit){ Thread.sleep(100) }
             if(albumArtList.isNotEmpty()){
                 val file = albumArtList[albumIndex]
                 if(file != null){
