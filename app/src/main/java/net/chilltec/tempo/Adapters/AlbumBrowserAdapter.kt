@@ -2,6 +2,7 @@ package net.chilltec.tempo.Adapters
 
 import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.album_item.view.*
