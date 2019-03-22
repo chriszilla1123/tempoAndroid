@@ -22,4 +22,16 @@
     <string name="rescan_playlists">Rescan Playlists</string>
     <string name="remove_from_playlist">Remove from playlist</string>
     <string name="download_album">Download Album</string>
+    <string name="menu_button_description">Menu Button</string>
+    <string name="album_artwork_description">Album Artwork</string>
+    <string name="album">album</string>
+    <string name="title">title</string>
+    <string name="artist">artist</string>
+    <string name="playlist">playlist</string>
+    <string name="time_zero">0:00</string>
+    <string name="button_play_pause">Play/Pause button</string>
+    <string name="button_prev"/>
+    <string name="button_next">Next Button</string>
+    <string name="button_shuffle">Shuffle</string>
+    <string name="button_repeat">Repeat</string>
 </resources>
