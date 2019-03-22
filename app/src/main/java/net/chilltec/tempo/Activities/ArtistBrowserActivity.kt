@@ -204,7 +204,7 @@ class ArtistBrowserActivity : AppCompatActivity() {
         popup.setOnMenuItemClickListener { menuItem ->
             val id = menuItem.itemId
             when(id){
-                R.id.artistItemPlayAll -> {
+                R.id.artistItemMenuPlayAll -> {
                     val songID: Int? = db?.getSongIdByArtistId(artistID)
                     val songList: IntArray? = db?.getSongListByArtistId(artistID)
                     if(songID != null && songID != -1 && songList != null && songList.isNotEmpty()){

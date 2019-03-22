@@ -9,6 +9,7 @@ import android.os.IBinder
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.PopupMenu
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
@@ -22,6 +23,7 @@ import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Playlist
 import net.chilltec.tempo.DataTypes.Song
 import net.chilltec.tempo.R
+import net.chilltec.tempo.R.id.playlistItemMenuDownloadPlaylist
 import net.chilltec.tempo.Services.DatabaseService
 import net.chilltec.tempo.Services.MediaService
 
@@ -35,6 +37,7 @@ class PlaylistBrowserActivity : AppCompatActivity() {
     private lateinit var songsDB: Array<Song>
     private val ref = this
     private val TAG = "PlaylistBrowserActivity"
+    private var isDBConnected: Boolean = false
 
     private var db: DatabaseService? = null
     private val dbConnection = object: ServiceConnection {
@@ -42,6 +45,7 @@ class PlaylistBrowserActivity : AppCompatActivity() {
             Log.i(TAG, "Connected to db")
             val binder = service as DatabaseService.LocalBinder
             db = binder.getService()
+            isDBConnected = true
             loadAdapter() //Must be called after the database mpConnection is established
         }
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -182,6 +186,8 @@ class PlaylistBrowserActivity : AppCompatActivity() {
     }
 
     fun onLongClickHandler(holder: PlaylistBrowserAdapter.PlaylistItemHolder): Boolean {
+        val playlistID: Int = holder.playlist_item.playlistID.text.toString().toInt()
+        playlistMenuHandler(holder, playlistID)
         return true
     }
 
@@ -218,4 +224,30 @@ class PlaylistBrowserActivity : AppCompatActivity() {
         }
     }
     //end init toolbar
+
+    //Playlist popup menu
+    fun playlistMenuHandler(holder: PlaylistBrowserAdapter.PlaylistItemHolder, playlistID: Int){
+        val menu = PopupMenu(this, holder.itemView)
+        menu.inflate(R.menu.playlist_item_menu)
+        menu.show()
+        menu.setOnMenuItemClickListener {
+            when(it.itemId){
+                playlistItemMenuDownloadPlaylist -> {
+                    Thread(Runnable{
+                        if(!isDBConnected) { Thread.sleep(10) }
+                        val songList = db?.getSongListByPlaylistId(playlistID) ?: intArrayOf()
+                        if(songList.size != 0){
+                            for(songID: Int in songList){
+                                mp?.addSongToCacheQueue(songID)
+                            }
+                        }
+                    }).start()
+                    true
+                }
+                else -> {
+                    false
+                }
+            }
+        }
+    }
 }

@@ -201,8 +201,8 @@ class AlbumBrowserActivity : AppCompatActivity() {
     }
 
     fun onLongClickHandler(holder: AlbumBrowserAdapter.AlbumItemHolder): Boolean{
-        var albumID: Int = holder.album_item.albumID.text.toString().toInt()
-        Log.i("AlbumBrowserActivity", "Long click album $albumID")
+        val albumID: Int = holder.album_item.albumID.text.toString().toInt()
+        albumMenuHandler(holder, albumID)
         return true
     }
 
@@ -273,7 +273,7 @@ class AlbumBrowserActivity : AppCompatActivity() {
             when(it.itemId){
                 albumItemMenuDownloadAlbum -> {
                     Thread(Runnable{
-                        if(!isDBConnected) { Thread.sleep(100) }
+                        if(!isDBConnected) { Thread.sleep(10) }
                         val songList = db?.getSongListByAlbumId(albumID) ?: intArrayOf()
                         if(songList.size != 0){
                             for(songID: Int in songList){

@@ -34,4 +34,5 @@
     <string name="button_next">Next Button</string>
     <string name="button_shuffle">Shuffle</string>
     <string name="button_repeat">Repeat</string>
+    <string name="download_playlsit">Download Playlist</string>
 </resources>
