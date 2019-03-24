@@ -72,6 +72,9 @@
                 <action android:name="android.intent.action.SEARCH"/>
             </intent-filter>
         </activity>
+        <activity android:name=".Activities.SettingsActivity"
+            android:label ="Settings"
+        />
 
     </application>
 </manifest>

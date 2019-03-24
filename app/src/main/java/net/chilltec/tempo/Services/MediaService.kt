@@ -8,6 +8,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkInfo
 import android.os.*
+import android.preference.PreferenceManager
 import android.support.v4.app.NotificationCompat
 import android.support.v4.content.ContextCompat
 import android.support.v4.media.MediaMetadataCompat
@@ -33,7 +34,8 @@ class MediaService : Service() {
     private val binder = LocalBinder()
     private lateinit var ms: MediaSessionCompat
     val http = OkHttpClient()
-    private val baseUrl = "http://www.chrisco.top/api"
+    //private val baseUrl = "http://www.chrisco.top/api"
+    private var baseUrl: String = ""
     private val TAG = "MediaService"
     private var songSet: IntArray = intArrayOf()
     private var shuffleSet: IntArray = intArrayOf()
@@ -72,7 +74,9 @@ class MediaService : Service() {
 
     override fun onCreate() {
         Log.i(TAG, "Media Service Created")
-
+        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
+        baseUrl = preferences.getString("server_base_url", "") ?: ""
+        Log.i(TAG, "Using base URL: $baseUrl")
         //Bind to DatabaseService
         var DBintent = Intent(this, DatabaseService::class.java)
         bindService(DBintent, DBconnection, Context.BIND_AUTO_CREATE)

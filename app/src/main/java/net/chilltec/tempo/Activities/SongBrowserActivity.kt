@@ -315,6 +315,16 @@ class SongBrowserActivity : AppCompatActivity() {
 
     //init toolbar
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        //Add specific options before inflating the main menu,
+        // to make the specific options show up first
+        menu?.add(R.string.download_all_songs)?.setOnMenuItemClickListener {
+            if(songList.size != 0){
+                for(songID: Int in songList){
+                    mp?.addSongToCacheQueue(songID)
+                }
+            }
+            true
+        }
         menuInflater.inflate(R.menu.main_menu, menu)
         return true
     }
@@ -326,6 +336,11 @@ class SongBrowserActivity : AppCompatActivity() {
         R.id.mainPlayer -> {
             //Open the player
             val intent = Intent(this, PlayerActivity::class.java)
+            startActivity(intent)
+            true
+        }
+        R.id.mainSettings -> {
+            val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)
             true
         }

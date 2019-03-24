@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <CheckBoxPreference
-        android:key="preferStreaming"
-        android:title="Prefer streaming over downloading"
-        android:summary="Starts playing faster, disables seek bar."/>
+    <EditTextPreference
+            android:defaultValue="Default value"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:inputType="textUri"
+            android:title="Set Server Address" android:key="server_base_url" android:summary="www.example.com/api"/>
 
 </PreferenceScreen>

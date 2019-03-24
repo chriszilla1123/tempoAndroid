@@ -1,5 +1,6 @@
 package net.chilltec.tempo.Activities
 
+import android.app.AlertDialog
 import android.app.SearchManager
 import android.content.*
 import kotlinx.android.synthetic.main. activity_main.*
@@ -19,6 +20,7 @@ import net.chilltec.tempo.BuildConfig
 
 
 class MainActivity : AppCompatActivity()  {
+    val context = this
 
     var mp: MediaService? = null
     val mediaServiceConnection = object: ServiceConnection {
@@ -68,40 +70,7 @@ class MainActivity : AppCompatActivity()  {
         bindService(DBintent, DBconnection, Context.BIND_AUTO_CREATE)
         //End initialize database
 
-        //init intents
-        fun openArtistBrowser(){
-            val allArtists = db?.getAllArtistIds() //May be null!
-            val intent = Intent(this, ArtistBrowserActivity::class.java)
-            intent.putExtra("artistList", allArtists)
-            intent.putExtra("title", "All Artists")
-            startActivity(intent)
-        }
-        fun openAlbumBrowser(){
-            val allAlbums = db?.getAllAlbumIds() //May be null!
-            val intent = Intent(this, AlbumBrowserActivity::class.java)
-            intent.putExtra("albumList", allAlbums)
-            intent.putExtra("title", "All Albums")
-            startActivity(intent)
-        }
-        fun openSongBrowser(){
-            val allSongs = db?.getAllSongIds() //May be null!
-            val intent = Intent(this, SongBrowserActivity::class.java)
-            intent.putExtra("songList", allSongs)
-            intent.putExtra("title", "All Songs")
-            startActivity(intent)
-        }
-        fun openPlaylistBrowser(){
-            val allPlaylists = db?.getAllPlaylistIds()
-            val intent = Intent(this, PlaylistBrowserActivity::class.java)
-            intent.putExtra("playlistList", allPlaylists)
-            intent.putExtra("title", "All Playlists")
-            startActivity(intent)
-        }
-        fun openPlayer(){
-            val intent = Intent(this, PlayerActivity::class.java)
-            startActivity(intent)
-        }
-        //end init intents
+
 
         buttonAllArtists.setOnClickListener{
             openArtistBrowser()
@@ -178,7 +147,11 @@ class MainActivity : AppCompatActivity()  {
         }
         R.id.mainPlayer -> {
             //Open the player
-            val intent = Intent(this, PlayerActivity::class.java)
+            openPlayer()
+            true
+        }
+        R.id.mainSettings -> {
+            val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)
             true
         }
@@ -200,15 +173,67 @@ class MainActivity : AppCompatActivity()  {
     }
     //end init toolbar
 
-    fun initNavBar(){
-        val navView = main_navdrawer
-        navView.setOnClickListener {
-            Log.i("MainMenu", it.toString())
-            true
+    //Open other activities
+    fun openArtistBrowser(){
+        val isReady: Boolean = db?.isDatabaseReady() ?: false
+        if(isReady){
+            val allArtists = db?.getAllArtistIds() //May be null!
+            val intent = Intent(this, ArtistBrowserActivity::class.java)
+            intent.putExtra("artistList", allArtists)
+            intent.putExtra("title", "All Artists")
+            startActivity(intent)
         }
+        else{ showDBErrorMessage() }
     }
+    fun openAlbumBrowser(){
+        val isReady: Boolean = db?.isDatabaseReady() ?: false
+        if(isReady){
+            val allAlbums = db?.getAllAlbumIds() //May be null!
+            val intent = Intent(this, AlbumBrowserActivity::class.java)
+            intent.putExtra("albumList", allAlbums)
+            intent.putExtra("title", "All Albums")
+            startActivity(intent)
+        }
+        else{ showDBErrorMessage() }
+    }
+    fun openSongBrowser(){
+        val isReady: Boolean = db?.isDatabaseReady() ?: false
+        if(isReady){
+            val allSongs = db?.getAllSongIds() //May be null!
+            val intent = Intent(this, SongBrowserActivity::class.java)
+            intent.putExtra("songList", allSongs)
+            intent.putExtra("title", "All Songs")
+            startActivity(intent)
+        }
+        else{ showDBErrorMessage() }
+    }
+    fun openPlaylistBrowser(){
+        val isReady: Boolean = db?.isDatabaseReady() ?: false
+        if(isReady){
+            val allPlaylists = db?.getAllPlaylistIds()
+            val intent = Intent(this, PlaylistBrowserActivity::class.java)
+            intent.putExtra("playlistList", allPlaylists)
+            intent.putExtra("title", "All Playlists")
+            startActivity(intent)
+        }
+        else{ showDBErrorMessage() }
+    }
+    fun openPlayer(){
+        val isReady: Boolean = db?.isDatabaseReady() ?: false
+        if(isReady){
+            val intent = Intent(this, PlayerActivity::class.java)
+            startActivity(intent)
+        }
+        else{ showDBErrorMessage() }
+    }
+    //End open other activities
 
-    fun onClick_artistNav(){
-
+    //Alert dialog
+    fun showDBErrorMessage(){
+        //Shows an alert, must be closed by user
+        val msg = "Error: Unable to initilize database. Is the server available?"
+        val alert = AlertDialog.Builder(this).setMessage(msg)
+        alert.setPositiveButton("Okay") { a,b -> } //Function is requried, so set to empty
+        alert.create().show()
     }
 }

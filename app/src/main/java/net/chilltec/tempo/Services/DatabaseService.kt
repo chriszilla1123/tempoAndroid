@@ -1,5 +1,6 @@
 package net.chilltec.tempo.Services
 
+import android.app.Activity
 import android.app.Service
 import android.content.ComponentName
 import android.content.Context
@@ -8,6 +9,7 @@ import android.content.ServiceConnection
 import android.net.Uri
 import android.os.IBinder
 import android.os.*
+import android.preference.PreferenceManager
 import android.provider.MediaStore
 import android.support.v4.media.MediaMetadataCompat
 import android.util.Log
@@ -23,7 +25,8 @@ import java.net.URLEncoder
 class DatabaseService : Service() {
     private val binder = LocalBinder()
     private val TAG = "DatabaseService"
-    private val baseURL = "http://www.chrisco.top/api"
+    //private val baseURL = "http://www.chrisco.top/api"
+    private var baseURL: String = ""
     private lateinit var artistsDB: Array<Artist>
     private lateinit var albumsDB: Array<Album>
     private lateinit var songsDB: Array<Song>
@@ -62,7 +65,10 @@ class DatabaseService : Service() {
 
     override fun onCreate(){
         Log.i(TAG, "Database Service Started")
-        //Bind the MediaService & DatabaseService
+        val preferences = PreferenceManager.getDefaultSharedPreferences(this)
+        baseURL = preferences.getString("server_base_url", "") ?: ""
+        Log.i(TAG, "Using base URL: $baseURL")
+        //Bind the MediaService
         val mpIntent = Intent(this, MediaService::class.java)
         bindService(mpIntent, mpConnection, Context.BIND_AUTO_CREATE)
 
@@ -390,7 +396,12 @@ class DatabaseService : Service() {
 
     //Update main databases (artist, album, song)
 
-    //End update main databases
+    //End update main databases'
+    fun isDatabaseReady(): Boolean{
+        //Used to check if the database initilization processes finished sucessfully
+        //Init can fail due to no internet connection, or the server being down.
+        return (isMainDBInit && isPlaylistsDBInit && isPlaylistSongsDBInit)
+    }
     fun updateDatabases(){
         Thread(Runnable {
             //Check if main databases need update (artist, album, song)
@@ -410,72 +421,79 @@ class DatabaseService : Service() {
             val localTimestamp = databaseTimestampFile.readText()
 
             //Get timestamp for the remote database
-            val remoteTimestampUrl = "$baseURL/getLastLibraryUpdate"
-            val request = Request.Builder().url(remoteTimestampUrl).build()
-            http.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException){}
-                override fun onResponse(call: Call, response: Response){
-                    var remoteTimestamp = response.body()?.string() ?: "-1"
-                    response.body()?.close()
-                    remoteTimestamp = (remoteTimestamp.toIntOrNull())?.toString() ?: (-1).toString()
-                    //An update is only required if the timestamps do not match
-                    var needsUpdate = remoteTimestamp != localTimestamp
 
-                    //If there was an error, can not update the database
-                    if(remoteTimestamp == "-1") { needsUpdate = false }
+            try{
+                val remoteTimestampUrl = "$baseURL/getLastLibraryUpdate"
+                val request = Request.Builder().url(remoteTimestampUrl).build()
+                http.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException){}
+                    override fun onResponse(call: Call, response: Response){
+                        var remoteTimestamp = response.body()?.string() ?: "-1"
+                        response.body()?.close()
+                        remoteTimestamp = (remoteTimestamp.toIntOrNull())?.toString() ?: (-1).toString()
+                        //An update is only required if the timestamps do not match
+                        var needsUpdate = remoteTimestamp != localTimestamp
 
-                    if(!needsUpdate){
-                        Log.i(TAG, "Local database is up to date")
-                        initDatabases()
+                        //If there was an error, can not update the database
+                        if(remoteTimestamp == "-1") { needsUpdate = false }
+
+                        if(!needsUpdate){
+                            Log.i(TAG, "Local database is up to date")
+                            initDatabases()
+                        }
+                        else{ //Update the database
+                            Log.i(TAG, "Updating the local database")
+                            val artistURL = "$baseURL/getArtists"
+                            val artistRequest = Request.Builder().url(artistURL).build()
+                            http.newCall(artistRequest).enqueue(object : Callback {
+                                override fun onFailure(call: Call, e: IOException){}
+                                override fun onResponse(call: Call, response: Response){
+                                    val respString = response.body()?.string()
+                                    response.body()?.close()
+                                    artistsFile.writeText(respString.toString())
+                                    artistsDB = gson.fromJson<Array<Artist>>(artistsFile.readText(),
+                                        object: TypeToken<Array<Artist>>(){}.type)
+                                    isArtistsDBInit = true
+                                }
+                            })
+                            val albumURL = "$baseURL/getAlbums"
+                            val albumRequest = Request.Builder().url(albumURL).build()
+                            http.newCall(albumRequest).enqueue(object : Callback {
+                                override fun onFailure(call: Call, e: IOException){}
+                                override fun onResponse(call: Call, response: Response){
+                                    val respString = response.body()?.string()
+                                    response.body()?.close()
+                                    albumsFile.writeText(respString.toString())
+                                    albumsDB = gson.fromJson<Array<Album>>(albumsFile.readText(),
+                                        object: TypeToken<Array<Album>>(){}.type)
+                                    isAlbumsDBInit = true
+                                    getAlbumArt()
+                                }
+                            })
+                            val songURL = "$baseURL/getSongs"
+                            val songRequest = Request.Builder().url(songURL).build()
+                            http.newCall(songRequest).enqueue(object : Callback {
+                                override fun onFailure(call: Call, e: IOException){}
+                                override fun onResponse(call: Call, response: Response){
+                                    val respString = response.body()?.string()
+                                    response.body()?.close()
+                                    songsFile.writeText(respString.toString())
+                                    songsDB = gson.fromJson<Array<Song>>(songsFile.readText(),
+                                        object: TypeToken<Array<Song>>(){}.type)
+                                    isSongsDBInit = true
+                                }
+                            })
+                            //Update local timestamp
+                            databaseTimestampFile.createNewFile()
+                            databaseTimestampFile.writeText(remoteTimestamp)
+                        }
                     }
-                    else{ //Update the database
-                        Log.i(TAG, "Updating the local database")
-                        val artistURL = "$baseURL/getArtists"
-                        val artistRequest = Request.Builder().url(artistURL).build()
-                        http.newCall(artistRequest).enqueue(object : Callback {
-                            override fun onFailure(call: Call, e: IOException){}
-                            override fun onResponse(call: Call, response: Response){
-                                val respString = response.body()?.string()
-                                response.body()?.close()
-                                artistsFile.writeText(respString.toString())
-                                artistsDB = gson.fromJson<Array<Artist>>(artistsFile.readText(),
-                                    object: TypeToken<Array<Artist>>(){}.type)
-                                isArtistsDBInit = true
-                            }
-                        })
-                        val albumURL = "$baseURL/getAlbums"
-                        val albumRequest = Request.Builder().url(albumURL).build()
-                        http.newCall(albumRequest).enqueue(object : Callback {
-                            override fun onFailure(call: Call, e: IOException){}
-                            override fun onResponse(call: Call, response: Response){
-                                val respString = response.body()?.string()
-                                response.body()?.close()
-                                albumsFile.writeText(respString.toString())
-                                albumsDB = gson.fromJson<Array<Album>>(albumsFile.readText(),
-                                    object: TypeToken<Array<Album>>(){}.type)
-                                isAlbumsDBInit = true
-                                getAlbumArt()
-                            }
-                        })
-                        val songURL = "$baseURL/getSongs"
-                        val songRequest = Request.Builder().url(songURL).build()
-                        http.newCall(songRequest).enqueue(object : Callback {
-                            override fun onFailure(call: Call, e: IOException){}
-                            override fun onResponse(call: Call, response: Response){
-                                val respString = response.body()?.string()
-                                response.body()?.close()
-                                songsFile.writeText(respString.toString())
-                                songsDB = gson.fromJson<Array<Song>>(songsFile.readText(),
-                                    object: TypeToken<Array<Song>>(){}.type)
-                                isSongsDBInit = true
-                            }
-                        })
-                        //Update local timestamp
-                        databaseTimestampFile.createNewFile()
-                        databaseTimestampFile.writeText(remoteTimestamp)
-                    }
-                }
-            })
+                })
+            }catch(e: Exception){
+                Log.i(TAG, "Error requesting main database update")
+                e.printStackTrace()
+                return@Runnable
+            }
             while(!isMainDBInit){
                 if(isArtistsDBInit && isAlbumsDBInit && isSongsDBInit){
                     Log.i(TAG, "Main databases are initialized")
@@ -525,62 +543,67 @@ class DatabaseService : Service() {
             }
             val localTimestamp = playlistTimestampFile.readText()
             //Compare localTimestamp to remote timestamp
-            val remoteTimestampUrl = "$baseURL/getLastPlaylistUpdate"
-            val request = Request.Builder().url(remoteTimestampUrl).build()
-            http.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException){}
-                override fun onResponse(call: Call, response: Response) {
-                    var remoteTimestamp = response.body()?.string() ?: "-1"
-                    response.body()?.close()
-                    remoteTimestamp = (remoteTimestamp.toIntOrNull())?.toString() ?: (-1).toString()
-                    //Only needs update if timestamps are different
-                    var needsUpdate = (remoteTimestamp != localTimestamp)
+            try{
+                val remoteTimestampUrl = "$baseURL/getLastPlaylistUpdate"
+                val request = Request.Builder().url(remoteTimestampUrl).build()
+                http.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException){}
+                    override fun onResponse(call: Call, response: Response) {
+                        var remoteTimestamp = response.body()?.string() ?: "-1"
+                        response.body()?.close()
+                        remoteTimestamp = (remoteTimestamp.toIntOrNull())?.toString() ?: (-1).toString()
+                        //Only needs update if timestamps are different
+                        var needsUpdate = (remoteTimestamp != localTimestamp)
 
-                    //Can't update if error occured
-                    if(remoteTimestamp == "-1"){ needsUpdate = false }
+                        //Can't update if error occured
+                        if(remoteTimestamp == "-1"){ needsUpdate = false }
 
-                    if(!needsUpdate){
-                        Log.i(TAG, "Local playlist databases are up to date")
-                        initPlaylistDatabases()
-                        finishedInit = true
+                        if(!needsUpdate){
+                            Log.i(TAG, "Local playlist databases are up to date")
+                            initPlaylistDatabases()
+                            finishedInit = true
+                        }
+                        else{ //update the playlist databases
+                            Log.i(TAG, "Updating the local playlist databases")
+                            val playlistURL = "$baseURL/getPlaylists"
+                            val playlistRequest = Request.Builder().url(playlistURL).build()
+                            http.newCall(playlistRequest).enqueue(object : Callback {
+                                override fun onFailure(call: Call, e: IOException){}
+                                override fun onResponse(call: Call, response: Response) {
+                                    val respString = response.body()?.string()
+                                    response.body()?.close()
+                                    playlistsFile.writeText(respString.toString())
+                                    playlistsDB =  gson.fromJson<Array<Playlist>>(playlistsFile.readText(),
+                                        object: TypeToken<Array<Playlist>>(){}.type)
+                                    isPlaylistsDBInit = true
+                                    Log.i(TAG, "Initialized Playlists DB")
+                                }
+                            })
+
+                            val playlistSongURL = "$baseURL/getPlaylistSongs"
+                            val playlistSongRequest = Request.Builder().url(playlistSongURL).build()
+                            http.newCall(playlistSongRequest).enqueue(object : Callback {
+                                override fun onFailure(call: Call, e: IOException){}
+                                override fun onResponse(call: Call, response: Response) {
+                                    val respString = response.body()?.string()
+                                    response.body()?.close()
+                                    playlistSongsFile.writeText(respString.toString())
+                                    playlistSongsDB =  gson.fromJson<Array<PlaylistSong>>(playlistSongsFile.readText(),
+                                        object: TypeToken<Array<PlaylistSong>>(){}.type)
+                                    isPlaylistSongsDBInit = true
+                                    Log.i(TAG, "Initialized PlaylistSongs DB")
+                                }
+                            })
+                            //update local timestamp
+                            playlistTimestampFile.createNewFile()
+                            playlistTimestampFile.writeText(remoteTimestamp)
+                        }
                     }
-                    else{ //update the playlist databases
-                        Log.i(TAG, "Updating the local playlist databases")
-                        val playlistURL = "$baseURL/getPlaylists"
-                        val playlistRequest = Request.Builder().url(playlistURL).build()
-                        http.newCall(playlistRequest).enqueue(object : Callback {
-                            override fun onFailure(call: Call, e: IOException){}
-                            override fun onResponse(call: Call, response: Response) {
-                                val respString = response.body()?.string()
-                                response.body()?.close()
-                                playlistsFile.writeText(respString.toString())
-                                playlistsDB =  gson.fromJson<Array<Playlist>>(playlistsFile.readText(),
-                                    object: TypeToken<Array<Playlist>>(){}.type)
-                                isPlaylistsDBInit = true
-                                Log.i(TAG, "Initialized Playlists DB")
-                            }
-                        })
-
-                        val playlistSongURL = "$baseURL/getPlaylistSongs"
-                        val playlistSongRequest = Request.Builder().url(playlistSongURL).build()
-                        http.newCall(playlistSongRequest).enqueue(object : Callback {
-                            override fun onFailure(call: Call, e: IOException){}
-                            override fun onResponse(call: Call, response: Response) {
-                                val respString = response.body()?.string()
-                                response.body()?.close()
-                                playlistSongsFile.writeText(respString.toString())
-                                playlistSongsDB =  gson.fromJson<Array<PlaylistSong>>(playlistSongsFile.readText(),
-                                    object: TypeToken<Array<PlaylistSong>>(){}.type)
-                                isPlaylistSongsDBInit = true
-                                Log.i(TAG, "Initialized PlaylistSongs DB")
-                            }
-                        })
-                        //update local timestamp
-                        playlistTimestampFile.createNewFile()
-                        playlistTimestampFile.writeText(remoteTimestamp)
-                    }
-                }
-            })
+                })
+            }catch(e: Exception){
+                Log.i(TAG, "Error requesting playlist database update")
+                return@Runnable
+            }
             while(!finishedInit){
                 if(isPlaylistsDBInit && isPlaylistSongsDBInit){
                     Log.i(TAG, "Playlist databases are initialized")

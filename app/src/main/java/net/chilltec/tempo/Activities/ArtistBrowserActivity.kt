@@ -236,6 +236,11 @@ class ArtistBrowserActivity : AppCompatActivity() {
             startActivity(intent)
             true
         }
+        R.id.mainSettings -> {
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+            true
+        }
         R.id.mainClearCache -> {
             mp?.clearCache()
             true

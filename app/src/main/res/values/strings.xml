@@ -13,8 +13,6 @@
     <string name="clear_cache_setting_lable">Clear Cache</string>
     <string name="rescan_library_setting_lable">Rescan Library files</string>
     <string name="player">Player</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="play_all">Play All</string>
     <string name="add_to_playlist">Add to playlist</string>
@@ -35,4 +33,5 @@
     <string name="button_shuffle">Shuffle</string>
     <string name="button_repeat">Repeat</string>
     <string name="download_playlsit">Download Playlist</string>
+    <string name="download_all_songs">Download All Songs</string>
 </resources>
