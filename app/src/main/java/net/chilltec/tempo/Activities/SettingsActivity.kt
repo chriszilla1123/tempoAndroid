@@ -1,6 +1,5 @@
 package net.chilltec.tempo.Activities
 
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.preference.PreferenceManager
 import android.support.v7.app.AppCompatActivity
@@ -31,7 +30,7 @@ class SettingsActivity: AppCompatActivity() {
         var newUrl = url
         if(newUrl.contains("http://") || newUrl.contains("https://")){ }
         else{
-            newUrl = "http://$url"
+            newUrl = "http://$newUrl"
         }
 
         if(newUrl.endsWith("/")){

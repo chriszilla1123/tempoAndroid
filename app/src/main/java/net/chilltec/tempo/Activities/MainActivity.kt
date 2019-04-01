@@ -17,6 +17,8 @@ import net.chilltec.tempo.Services.DatabaseService
 import net.chilltec.tempo.Services.MediaService
 import android.os.StrictMode
 import net.chilltec.tempo.BuildConfig
+import net.chilltec.tempo.Utils.DownloadsFragment
+import org.jetbrains.anko.contentView
 
 
 class MainActivity : AppCompatActivity()  {
@@ -153,6 +155,12 @@ class MainActivity : AppCompatActivity()  {
         R.id.mainSettings -> {
             val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)
+            true
+        }
+        R.id.mainDownloads -> {
+            supportFragmentManager.beginTransaction()
+                .add(android.R.id.content, DownloadsFragment())
+                .addToBackStack("DownloadFragment").commit()
             true
         }
         R.id.mainClearCache -> {

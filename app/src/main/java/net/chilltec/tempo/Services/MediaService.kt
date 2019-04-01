@@ -220,6 +220,10 @@ class MediaService : Service() {
             if(!curDownloading){ getInternetSong() }
         }).start()
     }
+    fun getCacheQueue(): IntArray{
+        //Returns a list of all songs in the download queue, may be empty
+        return cacheQueue.toIntArray()
+    }
     fun streamSong(id: Int){
         val url = "$baseUrl/getSongById/$id"
         try {

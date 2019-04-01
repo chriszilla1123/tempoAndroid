@@ -20,6 +20,11 @@
             android:icon="@drawable/ic_settings_black_24dp"
             android:title="@string/settings"
             app:showAsAction="never"/>
+    <!--Downloads-->
+    <item
+        android:id="@+id/mainDownloads"
+        android:title="@string/downloads"
+        app:showAsAction="never"/>
     <!--Clear Cache-->
     <item
             android:id="@+id/mainClearCache"
