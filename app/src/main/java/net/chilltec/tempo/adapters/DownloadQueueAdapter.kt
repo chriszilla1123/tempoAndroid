@@ -38,9 +38,9 @@ class DownloadQueueAdapter(val artistsDB: Array<Artist>,
         val albumIndex = songsDB[songIndex].album - 1
 
         holder.download_queue_item.songID.text = songID.toString()
-        holder.download_queue_item.songTitleLable.text = songsDB[songIndex].title
-        holder.download_queue_item.songArtistLable.text = artistsDB[artistIndex].artist
-        holder.download_queue_item.songAlbumLable.text = albumsDB[albumIndex].album
+        holder.download_queue_item.songTitleLabel.text = songsDB[songIndex].title
+        holder.download_queue_item.songArtistLabel.text = artistsDB[artistIndex].artist
+        holder.download_queue_item.songAlbumLabel.text = albumsDB[albumIndex].album
 
         holder.download_queue_item.setOnClickListener{
             //Pass the holder back to the activity

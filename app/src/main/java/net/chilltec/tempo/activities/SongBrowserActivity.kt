@@ -213,7 +213,7 @@ class SongBrowserActivity : AppCompatActivity() {
     private fun addPlaylistPopup(holder: SongBrowserAdapter.SongItemHolder){
         //Show a popup menu with all the playlists
         val songId = holder.song_item.songID.text.toString().toInt()
-        val songName = holder.song_item.songTitleLable.text.toString()
+        val songName = holder.song_item.songTitleLabel.text.toString()
         val songDir = db?.getSongDirBySongId(songId) ?: ""
         if(songDir.length >= 0){
             val playlistMenu = PopupMenu(this, holder.itemView)
@@ -252,7 +252,7 @@ class SongBrowserActivity : AppCompatActivity() {
                 val playlistName = supportActionBar?.title.toString()
                 val playlistID = db?.getPlaylistIDByPlaylistName(playlistName) ?: 0
                 val songID = holder.song_item.songID.text.toString().toInt()
-                val songName = holder.song_item.songTitleLable.text.toString()
+                val songName = holder.song_item.songTitleLabel.text.toString()
                 if(playlistID >= 1 && songID >= 1) {
                     db?.removeSongFromPlaylist(playlistID, songID)
                     Log.i(TAG, "Removing \"$songName\" from playlist: $playlistName")
@@ -269,7 +269,7 @@ class SongBrowserActivity : AppCompatActivity() {
                     val playlistName = menuItem.title.toString()
                     val playlistID = db?.getPlaylistIDByPlaylistName(playlistName) ?: 0
                     val songID = holder.song_item.songID.text.toString().toInt()
-                    val songName = holder.song_item.songTitleLable.text.toString()
+                    val songName = holder.song_item.songTitleLabel.text.toString()
                     if(playlistID >= 1 && songID >= 1) {
                         db?.removeSongFromPlaylist(playlistID, songID)
                         Log.i(TAG, "Removing \"$songName\" from playlist: $playlistName")

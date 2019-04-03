@@ -112,7 +112,7 @@ class SearchBrowserAdapter(val artistsDB: Array<Artist>,
                 val pos = position - 1 //for the artist label
                 val artistIndex = artistList[pos] - 1
                 artistHolder.artist_item.artistID.text = (artistIndex + 1).toString()
-                artistHolder.artist_item.artistLable.text = artistsDB[artistIndex].artist
+                artistHolder.artist_item.artistLabel.text = artistsDB[artistIndex].artist
 
                 artistHolder.artist_item.setOnClickListener{
                     //Pass the holder to the activity to handle to onClick event
@@ -134,8 +134,8 @@ class SearchBrowserAdapter(val artistsDB: Array<Artist>,
                 val artistIndex = albumsDB[albumIndex].artist - 1
 
                 albumHolder.album_item.albumID.text = (albumIndex + 1).toString()
-                albumHolder.album_item.albumLable.text = albumsDB[albumIndex].album
-                albumHolder.album_item.albumArtistLable.text = artistsDB[artistIndex].artist
+                albumHolder.album_item.albumLabel.text = albumsDB[albumIndex].album
+                albumHolder.album_item.albumArtistLabel.text = artistsDB[artistIndex].artist
 
                 albumHolder.album_item.setOnClickListener{
                     //Pass the holder to the activity to handle to onClick event
@@ -160,9 +160,9 @@ class SearchBrowserAdapter(val artistsDB: Array<Artist>,
                 val albumIndex = songsDB[songIndex].album - 1
 
                 songHolder.song_item.songID.text = (songIndex + 1).toString()
-                songHolder.song_item.songTitleLable.text = songsDB[songIndex].title
-                songHolder.song_item.songArtistLable.text = artistsDB[artistIndex].artist
-                songHolder.song_item.songAlbumLable.text = albumsDB[albumIndex].album
+                songHolder.song_item.songTitleLabel.text = songsDB[songIndex].title
+                songHolder.song_item.songArtistLabel.text = artistsDB[artistIndex].artist
+                songHolder.song_item.songAlbumLabel.text = albumsDB[albumIndex].album
 
                 songHolder.song_item.setOnClickListener{
                     //Pass the holder back to the activity

@@ -188,8 +188,8 @@ class AlbumBrowserActivity : AppCompatActivity() {
         //Start the SongBrowser with songs from the clicked album
         Thread(Runnable{
             val albumID: Int = holder.album_item.albumID.text.toString().toInt()
-            val albumName: String = holder.album_item.albumLable.text.toString()
-            val artistName: String = holder.album_item.albumArtistLable.text.toString()
+            val albumName: String = holder.album_item.albumLabel.text.toString()
+            val artistName: String = holder.album_item.albumArtistLabel.text.toString()
             val songsList = db?.getSongListByAlbumId(albumID) ?: intArrayOf()
             val intent = Intent(this, SongBrowserActivity::class.java)
             intent.putExtra("songList", songsList)

@@ -31,8 +31,8 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
         val albumID = albumIndex + 1
 
         holder.album_item.albumID.text = (albumIndex + 1).toString()
-        holder.album_item.albumLable.text = albumsDB[albumIndex].album
-        holder.album_item.albumArtistLable.text = artistsDB[artistIndex].artist
+        holder.album_item.albumLabel.text = albumsDB[albumIndex].album
+        holder.album_item.albumArtistLabel.text = artistsDB[artistIndex].artist
 
         holder.album_item.setOnClickListener{
             //Pass the holder to the activity to handle to onClick event
@@ -45,7 +45,7 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
         holder.album_item.albumMenu.setOnClickListener {
             context.albumMenuHandler(holder, albumID)
         }
-        holder.album_item.albumLable.bringToFront()
+        holder.album_item.albumLabel.bringToFront()
         context.setAlbumArtwork(holder, albumID)
     }
 

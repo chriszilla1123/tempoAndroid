@@ -176,7 +176,7 @@ class ArtistBrowserActivity : AppCompatActivity() {
     fun onClickHandler(holder: ArtistBrowserAdapter.ArtistItemHolder){
         //Start the AlbumBrowser with albums from the clicked artist
         val artistID: Int = holder.artist_item.artistID.text.toString().toInt()
-        val artistName: String = holder.artist_item.artistLable.text.toString()
+        val artistName: String = holder.artist_item.artistLabel.text.toString()
         val albumsMutableList = mutableListOf<Int>()
         for(album in albumsDB){
             if(album.artist == artistID){

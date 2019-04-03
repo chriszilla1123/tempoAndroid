@@ -37,9 +37,9 @@ class SongBrowserAdapter(val artistsDB: Array<Artist>,
         val albumIndex = songsDB[songIndex].album - 1
 
         holder.song_item.songID.text = (songIndex + 1).toString()
-        holder.song_item.songTitleLable.text = songsDB[songIndex].title
-        holder.song_item.songArtistLable.text = artistsDB[artistIndex].artist
-        holder.song_item.songAlbumLable.text = albumsDB[albumIndex].album
+        holder.song_item.songTitleLabel.text = songsDB[songIndex].title
+        holder.song_item.songArtistLabel.text = artistsDB[artistIndex].artist
+        holder.song_item.songAlbumLabel.text = albumsDB[albumIndex].album
 
         holder.song_item.setOnClickListener{ context.onClickCalled(holder) }
         holder.song_item.setOnLongClickListener{ context.onLongClickCalled(holder) }

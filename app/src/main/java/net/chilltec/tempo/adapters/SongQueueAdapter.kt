@@ -42,9 +42,9 @@ class SongQueueAdapter(val artistsDB: Array<Artist>,
         val albumIndex = songsDB[songIndex].album - 1
 
         holder.song_queue_item.songID.text = songID.toString()
-        holder.song_queue_item.songTitleLable.text = songsDB[songIndex].title
-        holder.song_queue_item.songArtistLable.text = artistsDB[artistIndex].artist
-        holder.song_queue_item.songAlbumLable.text = albumsDB[albumIndex].album
+        holder.song_queue_item.songTitleLabel.text = songsDB[songIndex].title
+        holder.song_queue_item.songArtistLabel.text = artistsDB[artistIndex].artist
+        holder.song_queue_item.songAlbumLabel.text = albumsDB[albumIndex].album
 
         holder.song_queue_item.setOnClickListener{
             //Pass the holder back to the activity
@@ -60,7 +60,7 @@ class SongQueueAdapter(val artistsDB: Array<Artist>,
         if(songID == nowPlaying){
 
             val highlightColor = Color.GREEN
-            holder.song_queue_item.songTitleLable.setTextColor(highlightColor)
+            holder.song_queue_item.songTitleLabel.setTextColor(highlightColor)
             holder.song_queue_item.songQueuePlayIcon.visibility = View.VISIBLE
             context.songQueueBrowser.scrollToPosition(position)
         }

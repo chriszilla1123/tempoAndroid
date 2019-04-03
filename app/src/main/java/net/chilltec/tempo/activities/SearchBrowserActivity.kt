@@ -203,7 +203,7 @@ class SearchBrowserActivity : AppCompatActivity() {
     fun artistOnClickHandler(holder: SearchBrowserAdapter.ArtistItemHolder){
         //Start the AlbumBrowser with albums from the clicked artist
         val artistID: Int = holder.artist_item.artistID.text.toString().toInt()
-        val artistName: String = holder.artist_item.artistLable.text.toString()
+        val artistName: String = holder.artist_item.artistLabel.text.toString()
         val albumsMutableList = mutableListOf<Int>()
         for(album in albumsDB){
             if(album.artist == artistID){
@@ -224,8 +224,8 @@ class SearchBrowserActivity : AppCompatActivity() {
     fun albumOnClickHandler(holder: SearchBrowserAdapter.AlbumItemHolder){
         //Start the SongBrowser with songs from the clicked album
         val albumID: Int = holder.album_item.albumID.text.toString().toInt()
-        val albumName: String = holder.album_item.albumLable.text.toString()
-        val artistName: String = holder.album_item.albumArtistLable.text.toString()
+        val albumName: String = holder.album_item.albumLabel.text.toString()
+        val artistName: String = holder.album_item.albumArtistLabel.text.toString()
         val songsMutableList = mutableListOf<Int>()
         for(song in songsDB){
             if(song.album == albumID){

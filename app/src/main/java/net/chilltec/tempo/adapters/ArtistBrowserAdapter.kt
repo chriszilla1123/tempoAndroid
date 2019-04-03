@@ -28,7 +28,7 @@ class ArtistBrowserAdapter(val artistsDB: Array<Artist>,
         val artistIndex = artistList[position] - 1
 
         holder.artist_item.artistID.text = (artistIndex + 1).toString()
-        holder.artist_item.artistLable.text = artistsDB[artistIndex].artist
+        holder.artist_item.artistLabel.text = artistsDB[artistIndex].artist
 
         holder.artist_item.setOnClickListener{
             //Pass the holder to the activity to handle the onClick event

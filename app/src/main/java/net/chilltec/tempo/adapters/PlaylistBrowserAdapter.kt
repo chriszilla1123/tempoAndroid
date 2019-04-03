@@ -29,7 +29,7 @@ class PlaylistBrowserAdapter(
         val playlistIndex = playlistList[position] - 1
 
         holder.playlist_item.playlistID.text = (playlistIndex + 1).toString()
-        holder.playlist_item.playlistLable.text = playlistsDB[playlistIndex].playlist
+        holder.playlist_item.playlistLabel.text = playlistsDB[playlistIndex].playlist
 
         holder.playlist_item.setOnClickListener{
             //Pass the holder to the activity to handle the onClick event

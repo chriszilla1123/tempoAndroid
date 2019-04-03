@@ -172,7 +172,7 @@ class PlaylistBrowserActivity : AppCompatActivity() {
         //Start the SongBrowser with songs from the clicked playlist
         Thread(Runnable{
             val playlistID: Int = holder.playlist_item.playlistID.text.toString().toInt()
-            val playlistName: String = holder.playlist_item.playlistLable.text.toString()
+            val playlistName: String = holder.playlist_item.playlistLabel.text.toString()
             val songsList = db?.getSongListByPlaylistId(playlistID) ?: intArrayOf()
             val intent = Intent(this, SongBrowserActivity::class.java)
             intent.putExtra("songList", songsList)
