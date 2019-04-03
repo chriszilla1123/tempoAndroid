@@ -38,4 +38,5 @@
     <string name="title_activity_downloads_browser">Downloads</string>
     <string name="action_settings">Settings</string>
     <string name="download_queue_empty">All songs have finished downloading, or the queue is empty</string>
+    <string name="download_icon">download icon</string>
 </resources>

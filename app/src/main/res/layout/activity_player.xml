@@ -20,7 +20,8 @@
                 android:layout_height="wrap_content"
                 android:background="?attr/colorPrimary"
                 android:theme="?attr/actionBarTheme"
-                android:minHeight="?attr/actionBarSize" android:id="@+id/playerToolbar"/>
+                android:minHeight="?attr/actionBarSize" android:id="@+id/playerToolbar"
+                app:layout_constraintTop_toTopOf="parent"/>
 
         <com.sothree.slidinguppanel.SlidingUpPanelLayout
                 xmlns:sothree="http://schemas.android.com/apk/res-auto"
@@ -47,27 +48,28 @@
                 <TextView
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
-                        android:id="@+id/playerTitleLable" app:layout_constraintEnd_toEndOf="parent"
+                        android:id="@+id/playerTitleLabel" app:layout_constraintEnd_toEndOf="parent"
                         android:textAlignment="center"
                         app:layout_constraintStart_toStartOf="parent"
                         android:textSize="24sp"
                         app:layout_constraintHorizontal_bias="0.501"
-                        app:layout_constraintBottom_toTopOf="@+id/playerArtistAlbumLable"/>
+                        app:layout_constraintBottom_toTopOf="@+id/playerArtistAlbumLabel"/>
                 <TextView
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
-                        android:id="@+id/playerArtistAlbumLable" android:textSize="12sp"
+                        android:id="@+id/playerArtistAlbumLabel" android:textSize="12sp"
                         android:layout_marginStart="24dp" app:layout_constraintStart_toStartOf="parent"
                         android:layout_marginEnd="24dp" app:layout_constraintEnd_toEndOf="parent"
                         android:textAlignment="center"
-                        app:layout_constraintTop_toBottomOf="@+id/playerTitleLable"/>
+                        app:layout_constraintTop_toBottomOf="@+id/playerTitleLabel"
+                        sothree:layout_constraintTop_toBottomOf="@+id/playerTitleLabel"/>
                 <View
                         android:id="@+id/songQueueDivider"
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="?android:attr/listDivider"
                         android:layout_marginTop="4dp"
-                        sothree:layout_constraintTop_toBottomOf="@+id/playerArtistAlbumLable"/>
+                        sothree:layout_constraintTop_toBottomOf="@+id/playerArtistAlbumLabel"/>
                 <android.support.v7.widget.RecyclerView
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
@@ -83,15 +85,15 @@
                 android:layout_height="29dp"
                 android:id="@+id/seekBar"
                 style="@android:style/Widget.Material.SeekBar"
-                app:layout_constraintStart_toEndOf="@+id/playerCurTimeLable"
-                android:layout_marginStart="4dp" app:layout_constraintEnd_toStartOf="@+id/playerMaxTimeLable"
+                app:layout_constraintStart_toEndOf="@+id/playerCurTimeLabel"
+                android:layout_marginStart="4dp" app:layout_constraintEnd_toStartOf="@+id/playerMaxTimeLabel"
                 android:layout_marginEnd="8dp"
                 app:layout_constraintBottom_toBottomOf="parent" android:layout_marginBottom="4dp"/>
         <TextView
                 android:text="@string/time_zero"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/playerCurTimeLable"
+                android:id="@+id/playerCurTimeLabel"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginStart="4dp"
                 app:layout_constraintTop_toTopOf="@+id/seekBar" app:layout_constraintBottom_toBottomOf="@+id/seekBar"/>
@@ -99,7 +101,7 @@
                 android:text="@string/time_zero"
                 android:layout_width="wrap_content"
                 android:layout_height="20dp"
-                android:id="@+id/playerMaxTimeLable"
+                android:id="@+id/playerMaxTimeLabel"
                 app:layout_constraintTop_toTopOf="@+id/seekBar" app:layout_constraintBottom_toBottomOf="@+id/seekBar"
                 app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="4dp"/>
         <ImageButton

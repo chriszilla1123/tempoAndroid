@@ -19,7 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="40dp"
             app:layout_constraintBottom_toBottomOf="@+id/albumArt" app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="@+id/albumArtistLable"
+            app:layout_constraintEnd_toEndOf="@+id/albumArtistLabel"
             android:background="#80000000"
             android:paddingTop="4dp" android:paddingBottom="4dp"
             android:id="@+id/tableRow" android:layout_marginEnd="4dp" android:layout_marginStart="4dp">
@@ -27,7 +27,7 @@
     <TextView
             android:text="@string/album"
             android:layout_width="0dp"
-            android:layout_height="0dp" android:id="@+id/albumLable"
+            android:layout_height="0dp" android:id="@+id/albumLabel"
             android:textAppearance="@style/TextAppearance.AppCompat"
             android:textSize="16sp"
             app:layout_constraintDimensionRatio="" android:layout_marginStart="8dp"
@@ -50,7 +50,7 @@
     <TextView
             android:text="@string/artist"
             android:layout_width="0dp"
-            android:layout_height="wrap_content" android:id="@+id/albumArtistLable"
+            android:layout_height="wrap_content" android:id="@+id/albumArtistLabel"
             android:textAppearance="@style/TextAppearance.AppCompat"
             android:textSize="14sp"
             android:visibility="invisible"
@@ -59,5 +59,6 @@
     <TextView
             android:layout_width="0dp"
             android:layout_height="0dp" android:id="@+id/albumID"
-            android:textAppearance="@style/TextAppearance.AppCompat"/>
+            android:textAppearance="@style/TextAppearance.AppCompat" app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" android:visibility="invisible"/>
 </android.support.constraint.ConstraintLayout>

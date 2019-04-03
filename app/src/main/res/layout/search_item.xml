@@ -1,7 +1,7 @@
 <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:layout_height="56dp">
+        xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+        android:layout_height="56dp" tools:keep="@layout/search_item">
 
     <TextView
             android:id="@+id/searchType" android:layout_weight="1"
@@ -11,11 +11,11 @@
             android:visibility="invisible" android:layout_width="0dp"/>
     <TextView
             android:layout_width="0dp"
-            android:layout_height="match_parent" android:id="@+id/searchLable" android:layout_weight="1"/>
+            android:layout_height="match_parent" android:id="@+id/searchLabel" android:layout_weight="1"/>
     <TextView
             android:layout_width="0dp"
-            android:layout_height="match_parent" android:id="@+id/searchArtistLable" android:layout_weight="1"/>
+            android:layout_height="match_parent" android:id="@+id/searchArtistLabel" android:layout_weight="1"/>
     <TextView
             android:layout_width="0dp"
-            android:layout_height="match_parent" android:id="@+id/searchAlbumLable" android:layout_weight="1"/>
+            android:layout_height="match_parent" android:id="@+id/searchAlbumLabel" android:layout_weight="1"/>
 </LinearLayout>

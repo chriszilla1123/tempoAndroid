@@ -117,10 +117,10 @@ class PlayerActivity : AppCompatActivity() {
                 val displaySeconds = (progress % 60).toString()
                 if (displaySeconds.length == 1) {
                     //prepend 0
-                    playerCurTimeLable.text = "$displayMinutes:0$displaySeconds"
+                    playerCurTimeLabel.text = "$displayMinutes:0$displaySeconds"
                 } else {
                     //Don't need to prepend 0
-                    playerCurTimeLable.text = "$displayMinutes:$displaySeconds"
+                    playerCurTimeLabel.text = "$displayMinutes:$displaySeconds"
                 }
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -285,11 +285,11 @@ class PlayerActivity : AppCompatActivity() {
         val songDuration: Int = mp?.getCurrentDuration() ?: 100
 
         if (songArtist.isEmpty()) {
-            playerArtistAlbumLable.text = ""
+            playerArtistAlbumLabel.text = ""
         } else {
-            playerArtistAlbumLable.text = "$songArtist - $songAlbum"
+            playerArtistAlbumLabel.text = "$songArtist - $songAlbum"
         }
-        playerTitleLable.text = songTitle
+        playerTitleLabel.text = songTitle
 
         val songDurationInSeconds = songDuration / 1000 //Convert from milliseconds
         val durationDisplayMinutes = (songDurationInSeconds / 60).toString()
@@ -300,7 +300,7 @@ class PlayerActivity : AppCompatActivity() {
         } else "$durationDisplayMinutes:$durationDisplaySeconds"
 
         seekBar.max = songDurationInSeconds
-        playerMaxTimeLable.text = durationDisplay
+        playerMaxTimeLabel.text = durationDisplay
 
         updatePlayButton()
         getArtwork()
@@ -370,8 +370,8 @@ class PlayerActivity : AppCompatActivity() {
         }
         val curSongLabel = "$curDisplayMinutes:$curDisplaySeconds"
         //Log.i(TAG, "Cur time: $curSongLabel")
-        playerCurTimeLable.post {
-            playerCurTimeLable.text = curSongLabel
+        playerCurTimeLabel.post {
+            playerCurTimeLabel.text = curSongLabel
         }
 
         //Update the seekbar
