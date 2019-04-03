@@ -15,8 +15,8 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@style/AppTheme.NoActionBar"
-            tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".Activities.MainActivity">
+            tools:ignore="AllowBackup,GoogleAppIndexingWarning">
+        <activity android:name=".activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
@@ -27,20 +27,20 @@
                     android:name="android.app.searchable_main"
                     android:value=".SearchBrowserActivity"/>
         </activity>
-        <activity android:name=".Activities.SongBrowserActivity">
+        <activity android:name=".activities.SongBrowserActivity">
         </activity>
-        <activity android:name=".Activities.AlbumBrowserActivity">
+        <activity android:name=".activities.AlbumBrowserActivity">
         </activity>
         <activity
-                android:name=".Activities.ArtistBrowserActivity"
+                android:name=".activities.ArtistBrowserActivity"
                 android:label="@string/title_activity_artist_browser">
         </activity>
         <activity
-                android:name=".Activities.PlaylistBrowserActivity"
+                android:name=".activities.PlaylistBrowserActivity"
                 android:label="PlaylistBrowserActivity">
         </activity>
         <activity
-                android:name=".Activities.PlayerActivity"
+                android:name=".activities.PlayerActivity"
                 android:launchMode="singleTask">
         </activity>
 
@@ -54,7 +54,7 @@
         <service
                 android:name=".services.MediaService"
                 android:enabled="true"
-                android:exported="true">
+                android:exported="true" android:permission="" tools:ignore="ExportedService">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON"/>
                 <action android:name="android.media.AUDIO_BECOMING_NOISY"/>
@@ -64,15 +64,15 @@
         <service
                 android:name=".services.DatabaseService"
                 android:enabled="true"
-                android:exported="true">
+                android:exported="true" android:permission="" tools:ignore="ExportedService">
         </service>
 
-        <activity android:name=".Activities.SearchBrowserActivity">
+        <activity android:name=".activities.SearchBrowserActivity">
 
             <!-- Parent activity meta-data to support 4.0 and lower -->
             <meta-data
                     android:name="android.support.PARENT_ACTIVITY"
-                    android:value="net.chilltec.tempo.Activities.MainActivity"/>
+                    android:value="net.chilltec.tempo.activities.MainActivity"/>
             <meta-data
                     android:name="android.app.searchable"
                     android:resource="@xml/searchable"/>
@@ -82,14 +82,8 @@
             </intent-filter>
         </activity>
         <activity
-                android:name=".Activities.SettingsActivity"
+                android:name=".activities.SettingsActivity"
                 android:label="Settings"/>
-        <activity
-                android:name=".Activities.DownloadsBrowser"
-                android:label="@string/title_activity_downloads_browser"
-                android:theme="@style/AppTheme.NoActionBar">
-        </activity>
-        <activity android:name=".Activities.DownloadsActivity"/>
     </application>
 
 </manifest>

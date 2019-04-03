@@ -1,16 +1,12 @@
-package net.chilltec.tempo.Adapters
+package net.chilltec.tempo.adapters
 
 import android.support.constraint.ConstraintLayout
-import android.support.v7.widget.PopupMenu
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.LayoutInflater
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.artist_item.view.*
-import net.chilltec.tempo.Activities.ArtistBrowserActivity
-import net.chilltec.tempo.DataTypes.Artist
+import net.chilltec.tempo.activities.ArtistBrowserActivity
+import net.chilltec.tempo.dataTypes.Artist
 import net.chilltec.tempo.R
 
 class ArtistBrowserAdapter(val artistsDB: Array<Artist>,

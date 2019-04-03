@@ -1,4 +1,4 @@
-package net.chilltec.tempo.Utils
+package net.chilltec.tempo.utils
 
 import android.os.Bundle
 import android.support.v7.preference.PreferenceFragmentCompat

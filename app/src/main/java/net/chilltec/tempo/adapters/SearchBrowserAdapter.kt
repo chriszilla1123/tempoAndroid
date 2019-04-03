@@ -1,8 +1,7 @@
-package net.chilltec.tempo.Adapters
+package net.chilltec.tempo.adapters
 
 import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,11 +9,11 @@ import kotlinx.android.synthetic.main.album_item.view.*
 import kotlinx.android.synthetic.main.artist_item.view.*
 import kotlinx.android.synthetic.main.search_title.view.*
 import kotlinx.android.synthetic.main.song_item.view.*
-import net.chilltec.tempo.Activities.SearchBrowserActivity
-import net.chilltec.tempo.DataTypes.Album
-import net.chilltec.tempo.DataTypes.Artist
+import net.chilltec.tempo.activities.SearchBrowserActivity
+import net.chilltec.tempo.dataTypes.Album
+import net.chilltec.tempo.dataTypes.Artist
 import net.chilltec.tempo.R
-import net.chilltec.tempo.DataTypes.Song
+import net.chilltec.tempo.dataTypes.Song
 
 class SearchBrowserAdapter(val artistsDB: Array<Artist>,
                            val albumsDB: Array<Album>,
@@ -37,16 +36,14 @@ class SearchBrowserAdapter(val artistsDB: Array<Artist>,
     private val artistTitle = 3
     private val albumTitle = 4
     private val songTitle = 5
-    private val TAG = "SearchBrowserTest"
 
     override fun getItemViewType(position: Int): Int {
         //Determine whether the passed item is an artist, album, or song
         //If there are nonzero artists, albums, or songs, each category will have a lable
         //Lables are counted as an item with a position
-        Log.i(TAG, "Position: $position")
         var pos = position
-        var artistOffset = if(artistList.isNotEmpty()) 1 else 0
-        var albumOffset = if(albumList.isNotEmpty()) 1 else 0
+        val artistOffset = if(artistList.isNotEmpty()) 1 else 0
+        val albumOffset = if(albumList.isNotEmpty()) 1 else 0
 
         if(artistList.isNotEmpty() && position == 0){
             return artistTitle
@@ -74,7 +71,7 @@ class SearchBrowserAdapter(val artistsDB: Array<Artist>,
 
     //New View
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        var view: View
+        val view: View
         when(viewType){
             artistItem -> {
                 view = LayoutInflater.from(parent.context)
@@ -112,7 +109,7 @@ class SearchBrowserAdapter(val artistsDB: Array<Artist>,
             artistItem -> {
                 val artistHolder =
                     ArtistItemHolder(holder.itemView as ConstraintLayout)
-                var pos = position - 1 //for the artist label
+                val pos = position - 1 //for the artist label
                 val artistIndex = artistList[pos] - 1
                 artistHolder.artist_item.artistID.text = (artistIndex + 1).toString()
                 artistHolder.artist_item.artistLable.text = artistsDB[artistIndex].artist
@@ -134,7 +131,7 @@ class SearchBrowserAdapter(val artistsDB: Array<Artist>,
                 var pos = position - 1 //for the album lable
                 if(artistList.isNotEmpty()) pos-- //for the possible artist lable
                 val albumIndex = albumList[pos - artistList.size] - 1
-                var artistIndex = albumsDB[albumIndex].artist - 1
+                val artistIndex = albumsDB[albumIndex].artist - 1
 
                 albumHolder.album_item.albumID.text = (albumIndex + 1).toString()
                 albumHolder.album_item.albumLable.text = albumsDB[albumIndex].album
@@ -181,17 +178,17 @@ class SearchBrowserAdapter(val artistsDB: Array<Artist>,
             artistTitle -> {
                 val titleHolder =
                     TitleHolder(holder.itemView as ConstraintLayout)
-                titleHolder.title_item.searchTitleLabel.text =  "Artists"
+                titleHolder.title_item.searchTitleLabel.text =  R.string.artists.toString()
             }
             albumTitle -> {
                 val titleHolder =
                     TitleHolder(holder.itemView as ConstraintLayout)
-                titleHolder.title_item.searchTitleLabel.text = "Albums"
+                titleHolder.title_item.searchTitleLabel.text = R.string.albums.toString()
             }
             songTitle -> {
                 val titleHolder =
                     TitleHolder(holder.itemView as ConstraintLayout)
-                titleHolder.title_item.searchTitleLabel.text = "Songs"
+                titleHolder.title_item.searchTitleLabel.text = R.string.songs.toString()
             }
         }
 

@@ -14,7 +14,7 @@ import android.support.v4.media.MediaMetadataCompat
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import net.chilltec.tempo.DataTypes.*
+import net.chilltec.tempo.dataTypes.*
 import okhttp3.*
 import java.io.File
 import java.io.IOException

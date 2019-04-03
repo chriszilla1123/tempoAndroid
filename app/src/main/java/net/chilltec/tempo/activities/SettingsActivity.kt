@@ -1,10 +1,10 @@
-package net.chilltec.tempo.Activities
+package net.chilltec.tempo.activities
 
 import android.os.Bundle
 import android.preference.PreferenceManager
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import net.chilltec.tempo.Utils.SettingsFragment
+import net.chilltec.tempo.utils.SettingsFragment
 
 class SettingsActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,7 +26,7 @@ class SettingsActivity: AppCompatActivity() {
         }
     }
 
-    fun validateURL(url: String): String {
+    private fun validateURL(url: String): String {
         var newUrl = url
         if(newUrl.contains("http://") || newUrl.contains("https://")){ }
         else{

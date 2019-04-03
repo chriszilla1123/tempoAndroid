@@ -1,4 +1,4 @@
-package net.chilltec.tempo.Activities
+package net.chilltec.tempo.activities
 
 import android.app.SearchManager
 import android.content.ComponentName
@@ -15,10 +15,10 @@ import kotlinx.android.synthetic.main.activity_search_browser.*
 import kotlinx.android.synthetic.main.album_item.view.*
 import kotlinx.android.synthetic.main.artist_item.view.*
 import kotlinx.android.synthetic.main.song_item.view.*
-import net.chilltec.tempo.Adapters.SearchBrowserAdapter
-import net.chilltec.tempo.DataTypes.Album
-import net.chilltec.tempo.DataTypes.Artist
-import net.chilltec.tempo.DataTypes.Song
+import net.chilltec.tempo.adapters.SearchBrowserAdapter
+import net.chilltec.tempo.dataTypes.Album
+import net.chilltec.tempo.dataTypes.Artist
+import net.chilltec.tempo.dataTypes.Song
 import net.chilltec.tempo.R
 import net.chilltec.tempo.services.DatabaseService
 import net.chilltec.tempo.services.MediaService
@@ -67,7 +67,7 @@ class SearchBrowserActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search_browser)
         setSupportActionBar(searchToolbar)
-        var toolbar = supportActionBar
+        val toolbar = supportActionBar
         toolbar?.title = if(intent.hasExtra("title")){ intent.getStringExtra("title") }
             else{ "Search Results" }
         toolbar?.subtitle = if(intent.hasExtra("subtitle")){ intent.getStringExtra("subtitle") }
@@ -81,7 +81,7 @@ class SearchBrowserActivity : AppCompatActivity() {
         val mpIntent = Intent(this, MediaService::class.java)
         bindService(mpIntent, mpConnection, Context.BIND_AUTO_CREATE)
 
-        var dbIntent = Intent(this, DatabaseService::class.java)
+        val dbIntent = Intent(this, DatabaseService::class.java)
         bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
 
         //If created by Intent
@@ -191,53 +191,55 @@ class SearchBrowserActivity : AppCompatActivity() {
         val mpIntent = Intent(this, MediaService::class.java)
         bindService(mpIntent, mpConnection, Context.BIND_AUTO_CREATE)
 
-        var dbIntent = Intent(this, DatabaseService::class.java)
+        val dbIntent = Intent(this, DatabaseService::class.java)
         bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
     }
 
-    fun endActivity(){
+    private fun endActivity(){
 
     }
 
     //Click Handlers
     fun artistOnClickHandler(holder: SearchBrowserAdapter.ArtistItemHolder){
         //Start the AlbumBrowser with albums from the clicked artist
-        var artistID: Int = holder.artist_item.artistID.text.toString().toInt()
-        var artistName: String = holder.artist_item.artistLable.text.toString()
-        var albumsMutableList = mutableListOf<Int>()
+        val artistID: Int = holder.artist_item.artistID.text.toString().toInt()
+        val artistName: String = holder.artist_item.artistLable.text.toString()
+        val albumsMutableList = mutableListOf<Int>()
         for(album in albumsDB){
             if(album.artist == artistID){
                 albumsMutableList.add(album.id)
             }
         }
-        var albumsList: IntArray = albumsMutableList.toIntArray()
+        val albumsList: IntArray = albumsMutableList.toIntArray()
         val intent = Intent(this, AlbumBrowserActivity::class.java)
         intent.putExtra("albumList", albumsList)
         intent.putExtra("title", artistName)
         intent.putExtra("subtitle", "All albums")
         startActivity(intent)
     }
+    @Suppress("UNUSED_PARAMETER")
     fun artistOnLongClickHandler(holder: SearchBrowserAdapter.ArtistItemHolder){
 
     }
     fun albumOnClickHandler(holder: SearchBrowserAdapter.AlbumItemHolder){
         //Start the SongBrowser with songs from the clicked album
-        var albumID: Int = holder.album_item.albumID.text.toString().toInt()
-        var albumName: String = holder.album_item.albumLable.text.toString()
-        var artistName: String = holder.album_item.albumArtistLable.text.toString()
-        var songsMutableList = mutableListOf<Int>()
+        val albumID: Int = holder.album_item.albumID.text.toString().toInt()
+        val albumName: String = holder.album_item.albumLable.text.toString()
+        val artistName: String = holder.album_item.albumArtistLable.text.toString()
+        val songsMutableList = mutableListOf<Int>()
         for(song in songsDB){
             if(song.album == albumID){
                 songsMutableList.add(song.id)
             }
         }
-        var songsList: IntArray = songsMutableList.toIntArray()
+        val songsList: IntArray = songsMutableList.toIntArray()
         val intent = Intent(this, SongBrowserActivity::class.java)
         intent.putExtra("songList", songsList)
         intent.putExtra("title", albumName)
         intent.putExtra("subtitle", artistName)
         startActivity(intent)
     }
+    @Suppress("UNUSED_PARAMETER")
     fun albumOnLongClickHandler(holder: SearchBrowserAdapter.AlbumItemHolder){
 
     }
@@ -246,6 +248,7 @@ class SearchBrowserActivity : AppCompatActivity() {
         mp?.setSongList(songList)
         mp?.playSongById(songId, true)
     }
+    @Suppress("UNUSED_PARAMETER")
     fun songOnLongClickHandler(holder: SearchBrowserAdapter.SongItemHolder){
 
     }

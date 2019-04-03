@@ -1,4 +1,4 @@
-package net.chilltec.tempo.Adapters
+package net.chilltec.tempo.adapters
 
 import android.graphics.Color
 import android.support.constraint.ConstraintLayout
@@ -8,22 +8,21 @@ import android.view.View
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.activity_player.*
 import kotlinx.android.synthetic.main.song_queue_item.view.*
-import net.chilltec.tempo.Activities.PlayerActivity
-import net.chilltec.tempo.DataTypes.Album
-import net.chilltec.tempo.DataTypes.Artist
-import net.chilltec.tempo.DataTypes.Song
+import net.chilltec.tempo.activities.PlayerActivity
+import net.chilltec.tempo.dataTypes.Album
+import net.chilltec.tempo.dataTypes.Artist
+import net.chilltec.tempo.dataTypes.Song
 import net.chilltec.tempo.R
 
 class SongQueueAdapter(val artistsDB: Array<Artist>,
-                         val albumsDB: Array<Album>,
-                         val songsDB: Array<Song>,
-                         val songList: IntArray,
-                         val nowPlaying: Int,
-                         val context: PlayerActivity
+                       val albumsDB: Array<Album>,
+                       val songsDB: Array<Song>,
+                       val songList: IntArray,
+                       private val nowPlaying: Int,
+                       val context: PlayerActivity
 )
     : RecyclerView.Adapter<SongQueueAdapter.SongQueueItemHolder>(){
 
-    val songQueueItemView = R.layout.song_queue_item
     class SongQueueItemHolder(val song_queue_item: ConstraintLayout): RecyclerView.ViewHolder(song_queue_item)
 
     //New View

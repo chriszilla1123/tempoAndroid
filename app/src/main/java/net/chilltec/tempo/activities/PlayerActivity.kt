@@ -1,5 +1,6 @@
-package net.chilltec.tempo.Activities
+package net.chilltec.tempo.activities
 
+import android.annotation.SuppressLint
 import android.content.*
 import android.graphics.Color
 import android.support.v7.app.AppCompatActivity
@@ -18,20 +19,13 @@ import android.widget.SeekBar
 import kotlinx.android.synthetic.main.activity_player.*
 import kotlinx.android.synthetic.main.song_queue_item.view.*
 import net.chilltec.tempo.*
-import net.chilltec.tempo.Adapters.SongQueueAdapter
-import net.chilltec.tempo.DataTypes.Album
-import net.chilltec.tempo.DataTypes.Artist
-import net.chilltec.tempo.DataTypes.Song
+import net.chilltec.tempo.adapters.SongQueueAdapter
 import net.chilltec.tempo.services.DatabaseService
 import net.chilltec.tempo.services.MediaService
 import org.jetbrains.anko.sdk27.coroutines.onTouch
 
 class PlayerActivity : AppCompatActivity() {
-    private lateinit var artistsDB: Array<Artist>
-    private lateinit var albumsDB: Array<Album>
-    private lateinit var songsDB: Array<Song>
     private var isActive: Boolean = false
-    val TAG = "PlayerActivity"
     val context = this
 
     private var db: DatabaseService? = null
@@ -49,47 +43,47 @@ class PlayerActivity : AppCompatActivity() {
         override fun onServiceDisconnected(name: ComponentName?) {
         }
     }
-    //Connect to this only after DatabaseService connection is establshed
+    //Connect to this only after DatabaseService connection is established
     //onServiceConnected is only called after both MP and DB connections are established.
     val mpConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as MediaService.LocalBinder
             mp = binder.getService()
             isBound = true
-            updateSongLables()
+            updateSongLabels()
             updatePlayButton()
             updateShuffleButton()
             updateRepeatButton()
             updateSongQueue()
             //Register Receiver
-            registerReceiver(playerUpdateReciever, IntentFilter(MediaService?.BROADCAST_SONG_UPDATE))
-            registerReceiver(playerUpdateReciever, IntentFilter(MediaService?.BROADCAST_PLAY_PAUSE))
-            registerReceiver(playerUpdateReciever, IntentFilter(MediaService?.BROADCAST_SHUFFLE_UPDATE))
-            registerReceiver(playerUpdateReciever, IntentFilter(MediaService?.BROADCAST_REPEAT_UPDATE))
+            registerReceiver(playerUpdateReceiver, IntentFilter(MediaService.BROADCAST_SONG_UPDATE))
+            registerReceiver(playerUpdateReceiver, IntentFilter(MediaService.BROADCAST_PLAY_PAUSE))
+            registerReceiver(playerUpdateReceiver, IntentFilter(MediaService.BROADCAST_SHUFFLE_UPDATE))
+            registerReceiver(playerUpdateReceiver, IntentFilter(MediaService.BROADCAST_REPEAT_UPDATE))
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             isBound = false
         }
     }
-    val playerUpdateReciever = object : BroadcastReceiver() {
+    val playerUpdateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
-                MediaService?.BROADCAST_SONG_UPDATE -> {
+                MediaService.BROADCAST_SONG_UPDATE -> {
                     Log.i(TAG, "Received song update broadcast")
-                    updateSongLables()
+                    updateSongLabels()
                     updateSongQueue()
                 }
-                MediaService?.BROADCAST_PLAY_PAUSE -> {
+                MediaService.BROADCAST_PLAY_PAUSE -> {
                     Log.i(TAG, "Received song play pause broadcast")
                     updatePlayButton()
                 }
-                MediaService?.BROADCAST_SHUFFLE_UPDATE -> {
-                    Log.i(TAG, "Recieved Shuffle Update Broadcast")
+                MediaService.BROADCAST_SHUFFLE_UPDATE -> {
+                    Log.i(TAG, "Received Shuffle Update Broadcast")
                     updateShuffleButton()
                     updateSongQueue()
                 }
-                MediaService?.BROADCAST_REPEAT_UPDATE -> {
+                MediaService.BROADCAST_REPEAT_UPDATE -> {
                     Log.i(TAG, "Received Repeat Update Broadcast")
                     updateRepeatButton()
                 }
@@ -102,19 +96,20 @@ class PlayerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player)
         setSupportActionBar(playerToolbar)
-        var toolbar = supportActionBar
+        val toolbar = supportActionBar
         toolbar?.apply {
             setDisplayHomeAsUpEnabled(true)
             setHomeAsUpIndicator(R.drawable.ic_menu_white_24dp)
         }
-        var myActivity = findViewById<ConstraintLayout>(R.id.playerLayout)
+        val myActivity = findViewById<ConstraintLayout>(R.id.playerLayout)
         myActivity.requestFocus()
 
         //Bind DatabaseService
-        var dbIntent = Intent(this, DatabaseService::class.java)
+        val dbIntent = Intent(this, DatabaseService::class.java)
         bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            @SuppressLint("SetTextI18n")
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 //Progress is in seconds
                 //toast("Progress is ${seekBar?.progress}%")
@@ -133,7 +128,7 @@ class PlayerActivity : AppCompatActivity() {
             }
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 //toast("Progress is ${seekBar?.progress}%")
-                var progress = if (seekBar?.progress != null) {
+                val progress = if (seekBar?.progress != null) {
                     seekBar.progress * 1000
                 } else -1
                 Log.i(TAG, "Setting time to $progress ")
@@ -196,7 +191,7 @@ class PlayerActivity : AppCompatActivity() {
     }
     override fun onDestroy() {
         super.onDestroy()
-        unregisterReceiver(playerUpdateReciever)
+        unregisterReceiver(playerUpdateReceiver)
         unbindService(dbConnection)
         unbindService(mpConnection)
     }
@@ -207,7 +202,7 @@ class PlayerActivity : AppCompatActivity() {
         val bindIntent = Intent(this, MediaService::class.java)
         bindService(bindIntent, mpConnection, Context.BIND_AUTO_CREATE)
         //Bind DatabaseService
-        var dbIntent = Intent(this, DatabaseService::class.java)
+        val dbIntent = Intent(this, DatabaseService::class.java)
         bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
 
         //Update song times in another thread
@@ -220,7 +215,7 @@ class PlayerActivity : AppCompatActivity() {
 
         //Control onClickDown and onClickUp listeners
         val pressedColor = Color.rgb(80, 80, 80)
-        playerButtonPrev.onTouch { v, event ->
+        playerButtonPrev.onTouch { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     playerButtonPrev.setColorFilter(pressedColor)
@@ -231,7 +226,7 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
         }
-        playerButtonPlay.onTouch { v, event ->
+        playerButtonPlay.onTouch { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     playerButtonPlay.setColorFilter(pressedColor)
@@ -243,7 +238,7 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
         }
-        playerButtonNext.onTouch { v, event ->
+        playerButtonNext.onTouch { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     playerButtonNext.setColorFilter(pressedColor)
@@ -254,7 +249,7 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
         }
-        playerShuffleButton.onTouch { v, event ->
+        playerShuffleButton.onTouch { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     playerShuffleButton.setColorFilter(pressedColor)
@@ -265,7 +260,7 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
         }
-        playerRepeatButton.onTouch { v, event ->
+        playerRepeatButton.onTouch { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_UP -> {
                     mp?.toggleRepeat()
@@ -278,17 +273,18 @@ class PlayerActivity : AppCompatActivity() {
         queueLayout.shadowHeight = 0
         queueLayout.setScrollableView(songQueueBrowser)
     }
-    private fun updateSongLables() {
+    @SuppressLint("SetTextI18n")
+    private fun updateSongLabels() {
         //Called whenever the song is updated
         val songID: Int = mp?.getCurSong() ?: -1
-        val artistID: Int = db?.getArtistIdBySongId(songID) ?: -1
-        val albumID: Int = db?.getAlbumIdBySongId(songID) ?: -1
+        //val artistID: Int = db?.getArtistIdBySongId(songID) ?: -1
+        //val albumID: Int = db?.getAlbumIdBySongId(songID) ?: -1
         val songArtist: String = db?.getArtistBySongId(songID) ?: ""
         val songAlbum: String = db?.getAlbumBySongId(songID) ?: ""
         val songTitle: String = db?.getTitleBySongId(songID) ?: ""
         val songDuration: Int = mp?.getCurrentDuration() ?: 100
 
-        if (songArtist.length == 0) {
+        if (songArtist.isEmpty()) {
             playerArtistAlbumLable.text = ""
         } else {
             playerArtistAlbumLable.text = "$songArtist - $songAlbum"
@@ -299,9 +295,9 @@ class PlayerActivity : AppCompatActivity() {
         val durationDisplayMinutes = (songDurationInSeconds / 60).toString()
         val durationDisplaySeconds = (songDurationInSeconds % 60).toString()
         val durationDisplay: String //Prepend 0, if necessary
-        if (durationDisplaySeconds.length == 1) {
-            durationDisplay = "$durationDisplayMinutes:0$durationDisplaySeconds"
-        } else durationDisplay = "$durationDisplayMinutes:$durationDisplaySeconds"
+        durationDisplay = if (durationDisplaySeconds.length == 1) {
+            "$durationDisplayMinutes:0$durationDisplaySeconds"
+        } else "$durationDisplayMinutes:$durationDisplaySeconds"
 
         seekBar.max = songDurationInSeconds
         playerMaxTimeLable.text = durationDisplay
@@ -362,7 +358,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun updateTimer() {
-        //If a song is currently playing, updates the playerCurTimeLable
+        //If a song is currently playing, updates the playerCurTimeLabel
         //Should run in a loop running on its own thread.
         val curTimeInMillis: Int = mp?.getProgress() ?: 0
         val curTimeInSeconds: Int = curTimeInMillis / 1000
@@ -372,10 +368,10 @@ class PlayerActivity : AppCompatActivity() {
             //prepend a 0 if the seconds is less than 10
             curDisplaySeconds = "0$curDisplaySeconds"
         }
-        val curSongLable = "$curDisplayMinutes:$curDisplaySeconds"
-        //Log.i(TAG, "Cur time: $curSongLable")
+        val curSongLabel = "$curDisplayMinutes:$curDisplaySeconds"
+        //Log.i(TAG, "Cur time: $curSongLabel")
         playerCurTimeLable.post {
-            playerCurTimeLable.text = curSongLable
+            playerCurTimeLable.text = curSongLabel
         }
 
         //Update the seekbar
@@ -388,10 +384,9 @@ class PlayerActivity : AppCompatActivity() {
     //Song Queue
     fun updateSongQueue() {
         //Called after the database connection is esablished
-        lateinit var recyclerView: RecyclerView
         lateinit var viewAdapter: RecyclerView.Adapter<*>
         lateinit var viewManager: RecyclerView.LayoutManager
-        var songQueue: IntArray = mp?.getSongQueue() ?: intArrayOf()
+        val songQueue: IntArray = mp?.getSongQueue() ?: intArrayOf()
 
         val artistsDB = db?.getArtistsDB() ?: arrayOf()
         val albumsDB = db?.getAlbumsDB() ?: arrayOf()
@@ -405,7 +400,7 @@ class PlayerActivity : AppCompatActivity() {
         viewManager = LinearLayoutManager(this)
         viewAdapter = SongQueueAdapter(artistsDB, albumsDB, songsDB, songQueue, songID, this)
 
-        recyclerView = songQueueBrowser.apply {
+        songQueueBrowser.apply {
             //Only if changes do not effect size
             setHasFixedSize(true)
 
@@ -422,6 +417,7 @@ class PlayerActivity : AppCompatActivity() {
         mp?.playSongById(songId, true)
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun onLongClickCalled(holder: SongQueueAdapter.SongQueueItemHolder) {
 
     }
@@ -460,4 +456,8 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
     //end init toolbar
+
+    companion object {
+        const val TAG = "PlayerActivity"
+    }
 }

@@ -1,4 +1,4 @@
-package net.chilltec.tempo.Activities
+package net.chilltec.tempo.activities
 
 import android.content.ComponentName
 import android.content.Context
@@ -16,13 +16,12 @@ import android.view.Menu
 import android.view.MenuItem
 import kotlinx.android.synthetic.main.activity_playlist_browser.*
 import kotlinx.android.synthetic.main.playlist_item.view.*
-import net.chilltec.tempo.Adapters.PlaylistBrowserAdapter
-import net.chilltec.tempo.DataTypes.Album
-import net.chilltec.tempo.DataTypes.Artist
-import net.chilltec.tempo.DataTypes.Playlist
-import net.chilltec.tempo.DataTypes.Song
 import net.chilltec.tempo.R
 import net.chilltec.tempo.R.id.playlistItemMenuDownloadPlaylist
+import net.chilltec.tempo.adapters.PlaylistBrowserAdapter
+import net.chilltec.tempo.dataTypes.Album
+import net.chilltec.tempo.dataTypes.Artist
+import net.chilltec.tempo.dataTypes.Playlist
 import net.chilltec.tempo.services.DatabaseService
 import net.chilltec.tempo.services.MediaService
 
@@ -33,9 +32,8 @@ class PlaylistBrowserActivity : AppCompatActivity() {
     private lateinit var playlistsDB: Array<Playlist>
     private lateinit var artistsDB: Array<Artist>
     private lateinit var albumsDB: Array<Album>
-    private lateinit var songsDB: Array<Song>
+    //private lateinit var songsDB: Array<Song>
     private val ref = this
-    private val TAG = "PlaylistBrowserActivity"
     private var isDBConnected: Boolean = false
 
     private var db: DatabaseService? = null
@@ -52,7 +50,7 @@ class PlaylistBrowserActivity : AppCompatActivity() {
     }
 
     var mp: MediaService? = null
-    val mpConnection = object: ServiceConnection {
+    private val mpConnection = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as MediaService.LocalBinder
             mp = binder.getService()
@@ -66,7 +64,7 @@ class PlaylistBrowserActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_playlist_browser)
         setSupportActionBar(playlistToolbar)
-        var toolbar = supportActionBar
+        val toolbar = supportActionBar
 
         toolbar?.title = if(intent.hasExtra("title")){ intent.getStringExtra("title") }
         else{ "Playlists" }
@@ -78,7 +76,7 @@ class PlaylistBrowserActivity : AppCompatActivity() {
         }
 
         //Bind the DatabaseService
-        var dbIntent = Intent(this, DatabaseService::class.java)
+        val dbIntent = Intent(this, DatabaseService::class.java)
         bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
         //Bind the MediaService
         val bindIntent = Intent(this, MediaService::class.java)
@@ -135,7 +133,7 @@ class PlaylistBrowserActivity : AppCompatActivity() {
     }
 
     fun loadAdapter(){
-        var playlistList = intent.getIntArrayExtra("playlistList")
+        val playlistList = intent.getIntArrayExtra("playlistList")
         playlistsDB = db?.getPlaylistsDB() ?: arrayOf()
         artistsDB = db?.getArtistsDB() ?: arrayOf()
         albumsDB = db?.getAlbumsDB() ?: arrayOf()
@@ -230,7 +228,7 @@ class PlaylistBrowserActivity : AppCompatActivity() {
     //end init toolbar
 
     //Playlist popup menu
-    fun playlistMenuHandler(holder: PlaylistBrowserAdapter.PlaylistItemHolder, playlistID: Int){
+    private fun playlistMenuHandler(holder: PlaylistBrowserAdapter.PlaylistItemHolder, playlistID: Int){
         val menu = PopupMenu(this, holder.itemView)
         menu.inflate(R.menu.playlist_item_menu)
         menu.show()
@@ -240,7 +238,7 @@ class PlaylistBrowserActivity : AppCompatActivity() {
                     Thread(Runnable{
                         if(!isDBConnected) { Thread.sleep(10) }
                         val songList = db?.getSongListByPlaylistId(playlistID) ?: intArrayOf()
-                        if(songList.size != 0){
+                        if(songList.isNotEmpty()){
                             for(songID: Int in songList){
                                 mp?.addSongToCacheQueue(songID)
                             }
@@ -253,5 +251,9 @@ class PlaylistBrowserActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        const val TAG = "PlaylistBrowserActivity"
     }
 }

@@ -1,17 +1,14 @@
-package net.chilltec.tempo.Adapters
+package net.chilltec.tempo.adapters
 
 import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.album_item.view.*
-import net.chilltec.tempo.Activities.AlbumBrowserActivity
-import net.chilltec.tempo.DataTypes.Album
-import net.chilltec.tempo.DataTypes.Artist
+import net.chilltec.tempo.activities.AlbumBrowserActivity
+import net.chilltec.tempo.dataTypes.Album
+import net.chilltec.tempo.dataTypes.Artist
 import net.chilltec.tempo.R
-
-
 
 class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
                           val albumsDB: Array<Album>,
@@ -20,8 +17,6 @@ class AlbumBrowserAdapter(val artistsDB: Array<Artist>,
 ): RecyclerView.Adapter<AlbumBrowserAdapter.AlbumItemHolder>(){
 
     class AlbumItemHolder(val album_item: ConstraintLayout): RecyclerView.ViewHolder(album_item)
-
-    var TAG = "AlbumBrowserAdapter" // For debugging
 
     //Create the holder
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumItemHolder {

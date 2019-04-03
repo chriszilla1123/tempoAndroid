@@ -1,4 +1,4 @@
-package net.chilltec.tempo.DataTypes
+package net.chilltec.tempo.dataTypes
 
 data class PlaylistSong(val id: Int,
                     val playlist: Int,

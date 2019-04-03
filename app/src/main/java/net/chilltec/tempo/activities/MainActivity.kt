@@ -1,4 +1,4 @@
-package net.chilltec.tempo.Activities
+package net.chilltec.tempo.activities
 
 import android.app.AlertDialog
 import android.app.SearchManager
@@ -16,14 +16,14 @@ import net.chilltec.tempo.services.DatabaseService
 import net.chilltec.tempo.services.MediaService
 import android.os.StrictMode
 import net.chilltec.tempo.BuildConfig
-import net.chilltec.tempo.Utils.DownloadsFragment
+import net.chilltec.tempo.utils.DownloadsFragment
 
 
 class MainActivity : AppCompatActivity()  {
     val context = this
 
     var mp: MediaService? = null
-    val mediaServiceConnection = object: ServiceConnection {
+    private val mediaServiceConnection = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as MediaService.LocalBinder
             mp = binder.getService()
@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity()  {
     }
 
     var db: DatabaseService? = null
-    val DBconnection = object: ServiceConnection {
+    private val dbConnection = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as DatabaseService.LocalBinder
             db = binder.getService()
@@ -50,7 +50,7 @@ class MainActivity : AppCompatActivity()  {
 
         //Toolbar Init
         setSupportActionBar(mainToolbar)
-        var toolbar = supportActionBar
+        val toolbar = supportActionBar
         toolbar?.title = "Tempo"
         toolbar?.apply {
             setDisplayHomeAsUpEnabled(true)
@@ -59,15 +59,15 @@ class MainActivity : AppCompatActivity()  {
         //End Toolbar Init
 
         //Initialize mediaPlayer and pass library
-        var MPintent = Intent(this, MediaService::class.java)
+        val mpIntent = Intent(this, MediaService::class.java)
         startService(intent)
-        bindService(MPintent, mediaServiceConnection, Context.BIND_AUTO_CREATE)
+        bindService(mpIntent, mediaServiceConnection, Context.BIND_AUTO_CREATE)
         //End initialize mediaPlayer
 
         //Initialize Database and bind to the service
-        var DBintent = Intent(this, DatabaseService::class.java)
-        startService(DBintent)
-        bindService(DBintent, DBconnection, Context.BIND_AUTO_CREATE)
+        val dbIntent = Intent(this, DatabaseService::class.java)
+        startService(dbIntent)
+        bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
         //End initialize database
 
 
@@ -126,7 +126,7 @@ class MainActivity : AppCompatActivity()  {
     override fun onDestroy(){
         super.onDestroy()
         unbindService(mediaServiceConnection)
-        unbindService(DBconnection)
+        unbindService(dbConnection)
     }
 
     //init toolbar
@@ -180,7 +180,7 @@ class MainActivity : AppCompatActivity()  {
     //end init toolbar
 
     //Open other activities
-    fun openArtistBrowser(){
+    private fun openArtistBrowser(){
         val isReady: Boolean = db?.isDatabaseReady() ?: false
         if(isReady){
             val allArtists = db?.getAllArtistIds() //May be null!
@@ -191,7 +191,7 @@ class MainActivity : AppCompatActivity()  {
         }
         else{ showDBErrorMessage() }
     }
-    fun openAlbumBrowser(){
+    private fun openAlbumBrowser(){
         val isReady: Boolean = db?.isDatabaseReady() ?: false
         if(isReady){
             val allAlbums = db?.getAllAlbumIds() //May be null!
@@ -202,7 +202,7 @@ class MainActivity : AppCompatActivity()  {
         }
         else{ showDBErrorMessage() }
     }
-    fun openSongBrowser(){
+    private fun openSongBrowser(){
         val isReady: Boolean = db?.isDatabaseReady() ?: false
         if(isReady){
             val allSongs = db?.getAllSongIds() //May be null!
@@ -213,7 +213,7 @@ class MainActivity : AppCompatActivity()  {
         }
         else{ showDBErrorMessage() }
     }
-    fun openPlaylistBrowser(){
+    private fun openPlaylistBrowser(){
         val isReady: Boolean = db?.isDatabaseReady() ?: false
         if(isReady){
             val allPlaylists = db?.getAllPlaylistIds()
@@ -224,7 +224,7 @@ class MainActivity : AppCompatActivity()  {
         }
         else{ showDBErrorMessage() }
     }
-    fun openPlayer(){
+    private fun openPlayer(){
         val isReady: Boolean = db?.isDatabaseReady() ?: false
         if(isReady){
             val intent = Intent(this, PlayerActivity::class.java)
@@ -235,11 +235,11 @@ class MainActivity : AppCompatActivity()  {
     //End open other activities
 
     //Alert dialog
-    fun showDBErrorMessage(){
+    private fun showDBErrorMessage(){
         //Shows an alert, must be closed by user
-        val msg = "Error: Unable to initilize database. Is the server available?"
+        val msg = "Error: Unable to initialize database. Is the server available?"
         val alert = AlertDialog.Builder(this).setMessage(msg)
-        alert.setPositiveButton("Okay") { a,b -> } //Function is requried, so set to empty
+        alert.setPositiveButton("Okay") { _, _ -> } //Function is required, so set to empty
         alert.create().show()
     }
 }

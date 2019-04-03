@@ -1,17 +1,18 @@
-package net.chilltec.tempo.Adapters
+package net.chilltec.tempo.adapters
 
 import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.playlist_item.view.*
-import net.chilltec.tempo.Activities.PlaylistBrowserActivity
-import net.chilltec.tempo.DataTypes.Playlist
+import net.chilltec.tempo.activities.PlaylistBrowserActivity
+import net.chilltec.tempo.dataTypes.Playlist
 import net.chilltec.tempo.R
 
-class PlaylistBrowserAdapter(val playlistsDB: Array<Playlist>,
-                             val playlistList: IntArray,
-                             val context: PlaylistBrowserActivity
+class PlaylistBrowserAdapter(
+    private val playlistsDB: Array<Playlist>,
+    private val playlistList: IntArray,
+    val context: PlaylistBrowserActivity
 ) : RecyclerView.Adapter<PlaylistBrowserAdapter.PlaylistItemHolder>() {
 
     class PlaylistItemHolder(val playlist_item: ConstraintLayout

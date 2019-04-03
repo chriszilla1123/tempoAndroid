@@ -15,7 +15,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import android.view.KeyEvent
-import net.chilltec.tempo.Activities.PlayerActivity
+import net.chilltec.tempo.activities.PlayerActivity
 import net.chilltec.tempo.R
 import okhttp3.*
 import org.jetbrains.anko.runOnUiThread

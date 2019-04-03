@@ -1,15 +1,15 @@
-package net.chilltec.tempo.Adapters
+package net.chilltec.tempo.adapters
 
 import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.song_queue_item.view.*
-import net.chilltec.tempo.DataTypes.Album
-import net.chilltec.tempo.DataTypes.Artist
-import net.chilltec.tempo.DataTypes.Song
+import net.chilltec.tempo.dataTypes.Album
+import net.chilltec.tempo.dataTypes.Artist
+import net.chilltec.tempo.dataTypes.Song
 import net.chilltec.tempo.R
-import net.chilltec.tempo.Utils.DownloadsFragment
+import net.chilltec.tempo.utils.DownloadsFragment
 
 class DownloadQueueAdapter(val artistsDB: Array<Artist>,
                            val albumsDB: Array<Album>,

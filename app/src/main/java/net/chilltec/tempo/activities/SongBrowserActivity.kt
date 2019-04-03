@@ -1,4 +1,4 @@
-package net.chilltec.tempo.Activities
+package net.chilltec.tempo.activities
 
 import android.content.ComponentName
 import android.content.Context
@@ -20,7 +20,7 @@ import kotlinx.android.synthetic.main.song_item.view.*
 import net.chilltec.tempo.services.DatabaseService
 import net.chilltec.tempo.services.MediaService
 import net.chilltec.tempo.R
-import net.chilltec.tempo.Adapters.SongBrowserAdapter
+import net.chilltec.tempo.adapters.SongBrowserAdapter
 import net.chilltec.tempo.R.id.songItemAddToPlaylist
 import net.chilltec.tempo.R.id.songItemRemoveFromPlaylist
 
@@ -30,7 +30,6 @@ class SongBrowserActivity : AppCompatActivity() {
     private lateinit var viewManager: RecyclerView.LayoutManager
     private lateinit var songList: IntArray
     private lateinit var cachedList: IntArray
-    private val TAG = "SongBrowserActivity"
 
     private var isCachedListReady: Boolean = false
 
@@ -68,7 +67,7 @@ class SongBrowserActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_song_browser)
         setSupportActionBar(songToolbar)
-        var toolbar = supportActionBar
+        val toolbar = supportActionBar
         toolbar?.title = if(intent.hasExtra("title")){ intent.getStringExtra("title") }
                             else{ "Artists" }
         toolbar?.subtitle = if(intent.hasExtra("subtitle")){ intent.getStringExtra("subtitle") }
@@ -82,7 +81,7 @@ class SongBrowserActivity : AppCompatActivity() {
         val mpIntent = Intent(this, MediaService::class.java)
         bindService(mpIntent, mpConnection, Context.BIND_AUTO_CREATE)
 
-        var dbIntent = Intent(this, DatabaseService::class.java)
+        val dbIntent = Intent(this, DatabaseService::class.java)
         bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
 
         //init intents
@@ -161,18 +160,13 @@ class SongBrowserActivity : AppCompatActivity() {
         }
     }
 
-    override fun onPause(){
-        super.onPause()
-
-    }
-
     override fun onResume(){
         super.onResume()
         //Bind the MediaService & DatabaseService
         val mpIntent = Intent(this, MediaService::class.java)
         bindService(mpIntent, mpConnection, Context.BIND_AUTO_CREATE)
 
-        var dbIntent = Intent(this, DatabaseService::class.java)
+        val dbIntent = Intent(this, DatabaseService::class.java)
         bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
     }
 
@@ -196,7 +190,7 @@ class SongBrowserActivity : AppCompatActivity() {
         return true
     }
 
-    fun createSongPopup(holder: SongBrowserAdapter.SongItemHolder){
+    private fun createSongPopup(holder: SongBrowserAdapter.SongItemHolder){
         val menu = PopupMenu(this, holder.itemView)
         menu.inflate(R.menu.song_item_menu)
         menu.show()
@@ -216,7 +210,7 @@ class SongBrowserActivity : AppCompatActivity() {
             }
         }
     }
-    fun addPlaylistPopup(holder: SongBrowserAdapter.SongItemHolder){
+    private fun addPlaylistPopup(holder: SongBrowserAdapter.SongItemHolder){
         //Show a popup menu with all the playlists
         val songId = holder.song_item.songID.text.toString().toInt()
         val songName = holder.song_item.songTitleLable.text.toString()
@@ -244,7 +238,7 @@ class SongBrowserActivity : AppCompatActivity() {
         }
     }
 
-    fun removePlaylistPopup(holder: SongBrowserAdapter.SongItemHolder){
+    private fun removePlaylistPopup(holder: SongBrowserAdapter.SongItemHolder){
         //Shows a list of playlists to remove a song from
         val songId = holder.song_item.songID.text.toString().toInt()
         val songDir = db?.getSongDirBySongId(songId) ?: ""
@@ -307,7 +301,7 @@ class SongBrowserActivity : AppCompatActivity() {
         mp?.addSongToCacheQueue(songID)
     }
 
-    fun endActivity(){
+    private fun endActivity(){
         this.unbindService(mpConnection)
         this.unbindService(dbConnection)
         finish()
@@ -318,7 +312,7 @@ class SongBrowserActivity : AppCompatActivity() {
         //Add specific options before inflating the main menu,
         // to make the specific options show up first
         menu?.add(R.string.download_all_songs)?.setOnMenuItemClickListener {
-            if(songList.size != 0){
+            if(songList.isNotEmpty()){
                 for(songID: Int in songList){
                     mp?.addSongToCacheQueue(songID)
                 }
@@ -361,4 +355,8 @@ class SongBrowserActivity : AppCompatActivity() {
         }
     }
     //end init toolbar
+
+    companion object {
+        const val TAG = "SongBrowserActivity"
+    }
 }

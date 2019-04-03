@@ -1,15 +1,15 @@
-package net.chilltec.tempo.Adapters
+package net.chilltec.tempo.adapters
 
 import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.song_item.view.*
-import net.chilltec.tempo.Activities.SongBrowserActivity
-import net.chilltec.tempo.DataTypes.Album
-import net.chilltec.tempo.DataTypes.Artist
+import net.chilltec.tempo.activities.SongBrowserActivity
+import net.chilltec.tempo.dataTypes.Album
+import net.chilltec.tempo.dataTypes.Artist
 import net.chilltec.tempo.R
-import net.chilltec.tempo.DataTypes.Song
+import net.chilltec.tempo.dataTypes.Song
 
 class SongBrowserAdapter(val artistsDB: Array<Artist>,
                          val albumsDB: Array<Album>,

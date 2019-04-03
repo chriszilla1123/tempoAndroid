@@ -1,4 +1,4 @@
-package net.chilltec.tempo.Utils
+package net.chilltec.tempo.utils
 
 import android.content.ComponentName
 import android.content.Context
@@ -12,29 +12,28 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.download_queue_browser.*
-import net.chilltec.tempo.Adapters.DownloadQueueAdapter
+import net.chilltec.tempo.adapters.DownloadQueueAdapter
 import net.chilltec.tempo.R
 import net.chilltec.tempo.services.DatabaseService
 import net.chilltec.tempo.services.MediaService
 import org.jetbrains.anko.support.v4.runOnUiThread
 
 class DownloadsFragment : Fragment() {
-    val TAG = "DownloadsFragment"
     var isDBConnected: Boolean = false
     var isMPConnected: Boolean = false
     var shouldKeepThreadAlive: Boolean = false
     lateinit var ref: Context
 
     var db: DatabaseService? = null
-    val DBconnection = object : ServiceConnection {
+    private val dbConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as DatabaseService.LocalBinder
             db = binder.getService()
             isDBConnected = true
 
             //Initialize MediaService after DatabaseService is connected
-            var MPIntent = Intent(ref, MediaService::class.java)
-            ref.bindService(MPIntent, mediaServiceConnection, Context.BIND_AUTO_CREATE)
+            val mpIntent = Intent(ref, MediaService::class.java)
+            ref.bindService(mpIntent, mediaServiceConnection, Context.BIND_AUTO_CREATE)
             //End initialize MediaService
         }
 
@@ -67,8 +66,8 @@ class DownloadsFragment : Fragment() {
         ref = container?.context ?: return null
 
         //Initialize Database and bind to the service
-        val DBintent = Intent(ref, DatabaseService::class.java)
-        ref.bindService(DBintent, DBconnection, Context.BIND_AUTO_CREATE)
+        val dbIntent = Intent(ref, DatabaseService::class.java)
+        ref.bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
         //End initialize database
 
         return inflater.inflate(R.layout.download_queue_browser, container, false)
@@ -85,7 +84,7 @@ class DownloadsFragment : Fragment() {
         Thread(Runnable {
             while (isDBConnected && isMPConnected && shouldKeepThreadAlive) {
                 val downloadList = mp?.getCacheQueue() ?: intArrayOf()
-                if(downloadList.size == 0){
+                if(downloadList.isEmpty()){
                     runOnUiThread { downloadEmptyMessageBox.visibility = View.VISIBLE }
 
                 }
@@ -113,10 +112,12 @@ class DownloadsFragment : Fragment() {
         }).start()
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun onItemClickListener(holder: DownloadQueueAdapter.DownloadQueueItemHolder) {
 
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun onItemLongClickListener(holder: DownloadQueueAdapter.DownloadQueueItemHolder) {
 
     }
