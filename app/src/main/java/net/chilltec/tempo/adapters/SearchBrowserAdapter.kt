@@ -178,17 +178,17 @@ class SearchBrowserAdapter(val artistsDB: Array<Artist>,
             artistTitle -> {
                 val titleHolder =
                     TitleHolder(holder.itemView as ConstraintLayout)
-                titleHolder.title_item.searchTitleLabel.text =  R.string.artists.toString()
+                titleHolder.title_item.searchTitleLabel.text =  context.getString(R.string.artists)
             }
             albumTitle -> {
                 val titleHolder =
                     TitleHolder(holder.itemView as ConstraintLayout)
-                titleHolder.title_item.searchTitleLabel.text = R.string.albums.toString()
+                titleHolder.title_item.searchTitleLabel.text = context.getString(R.string.albums)
             }
             songTitle -> {
                 val titleHolder =
                     TitleHolder(holder.itemView as ConstraintLayout)
-                titleHolder.title_item.searchTitleLabel.text = R.string.songs.toString()
+                titleHolder.title_item.searchTitleLabel.text = context.getString(R.string.songs)
             }
         }
 
