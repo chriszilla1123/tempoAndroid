@@ -22,8 +22,8 @@ import net.chilltec.tempo.*
 import net.chilltec.tempo.Adapters.ArtistBrowserAdapter
 import net.chilltec.tempo.DataTypes.Album
 import net.chilltec.tempo.DataTypes.Artist
-import net.chilltec.tempo.Services.DatabaseService
-import net.chilltec.tempo.Services.MediaService
+import net.chilltec.tempo.services.DatabaseService
+import net.chilltec.tempo.services.MediaService
 
 class ArtistBrowserActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView

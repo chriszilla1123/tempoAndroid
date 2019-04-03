@@ -52,7 +52,7 @@
         </receiver>
 
         <service
-                android:name=".Services.MediaService"
+                android:name=".services.MediaService"
                 android:enabled="true"
                 android:exported="true">
             <intent-filter>
@@ -62,7 +62,7 @@
             </intent-filter>
         </service>
         <service
-                android:name=".Services.DatabaseService"
+                android:name=".services.DatabaseService"
                 android:enabled="true"
                 android:exported="true">
         </service>

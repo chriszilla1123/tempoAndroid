@@ -8,17 +8,15 @@ import android.os.*
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.SearchView
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import net.chilltec.tempo.R
 import net.chilltec.tempo.R.id.*
-import net.chilltec.tempo.Services.DatabaseService
-import net.chilltec.tempo.Services.MediaService
+import net.chilltec.tempo.services.DatabaseService
+import net.chilltec.tempo.services.MediaService
 import android.os.StrictMode
 import net.chilltec.tempo.BuildConfig
 import net.chilltec.tempo.Utils.DownloadsFragment
-import org.jetbrains.anko.contentView
 
 
 class MainActivity : AppCompatActivity()  {

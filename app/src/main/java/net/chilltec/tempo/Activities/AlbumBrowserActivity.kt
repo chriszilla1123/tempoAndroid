@@ -11,7 +11,6 @@ import android.support.v4.view.GravityCompat
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.PopupMenu
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import com.squareup.picasso.Picasso
@@ -23,8 +22,8 @@ import net.chilltec.tempo.DataTypes.Album
 import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Song
 import net.chilltec.tempo.R.id.albumItemMenuDownloadAlbum
-import net.chilltec.tempo.Services.DatabaseService
-import net.chilltec.tempo.Services.MediaService
+import net.chilltec.tempo.services.DatabaseService
+import net.chilltec.tempo.services.MediaService
 import java.io.File
 
 class AlbumBrowserActivity : AppCompatActivity() {

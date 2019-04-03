@@ -11,7 +11,6 @@ import android.os.IBinder
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_search_browser.*
 import kotlinx.android.synthetic.main.album_item.view.*
 import kotlinx.android.synthetic.main.artist_item.view.*
@@ -21,8 +20,8 @@ import net.chilltec.tempo.DataTypes.Album
 import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Song
 import net.chilltec.tempo.R
-import net.chilltec.tempo.Services.DatabaseService
-import net.chilltec.tempo.Services.MediaService
+import net.chilltec.tempo.services.DatabaseService
+import net.chilltec.tempo.services.MediaService
 
 class SearchBrowserActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView

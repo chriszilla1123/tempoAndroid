@@ -14,7 +14,6 @@ import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import kotlinx.android.synthetic.main.activity_artist_browser.*
 import kotlinx.android.synthetic.main.activity_playlist_browser.*
 import kotlinx.android.synthetic.main.playlist_item.view.*
 import net.chilltec.tempo.Adapters.PlaylistBrowserAdapter
@@ -24,8 +23,8 @@ import net.chilltec.tempo.DataTypes.Playlist
 import net.chilltec.tempo.DataTypes.Song
 import net.chilltec.tempo.R
 import net.chilltec.tempo.R.id.playlistItemMenuDownloadPlaylist
-import net.chilltec.tempo.Services.DatabaseService
-import net.chilltec.tempo.Services.MediaService
+import net.chilltec.tempo.services.DatabaseService
+import net.chilltec.tempo.services.MediaService
 
 class PlaylistBrowserActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView

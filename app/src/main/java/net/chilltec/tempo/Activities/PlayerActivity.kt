@@ -22,8 +22,8 @@ import net.chilltec.tempo.Adapters.SongQueueAdapter
 import net.chilltec.tempo.DataTypes.Album
 import net.chilltec.tempo.DataTypes.Artist
 import net.chilltec.tempo.DataTypes.Song
-import net.chilltec.tempo.Services.DatabaseService
-import net.chilltec.tempo.Services.MediaService
+import net.chilltec.tempo.services.DatabaseService
+import net.chilltec.tempo.services.MediaService
 import org.jetbrains.anko.sdk27.coroutines.onTouch
 
 class PlayerActivity : AppCompatActivity() {
@@ -62,10 +62,10 @@ class PlayerActivity : AppCompatActivity() {
             updateRepeatButton()
             updateSongQueue()
             //Register Receiver
-            registerReceiver(playerUpdateReciever, IntentFilter(mp?.BROADCAST_SONG_UPDATE))
-            registerReceiver(playerUpdateReciever, IntentFilter(mp?.BROADCAST_PLAY_PAUSE))
-            registerReceiver(playerUpdateReciever, IntentFilter(mp?.BROADCAST_SHUFFLE_UPDATE))
-            registerReceiver(playerUpdateReciever, IntentFilter(mp?.BROADCAST_REPEAT_UPDATE))
+            registerReceiver(playerUpdateReciever, IntentFilter(MediaService?.BROADCAST_SONG_UPDATE))
+            registerReceiver(playerUpdateReciever, IntentFilter(MediaService?.BROADCAST_PLAY_PAUSE))
+            registerReceiver(playerUpdateReciever, IntentFilter(MediaService?.BROADCAST_SHUFFLE_UPDATE))
+            registerReceiver(playerUpdateReciever, IntentFilter(MediaService?.BROADCAST_REPEAT_UPDATE))
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -75,21 +75,21 @@ class PlayerActivity : AppCompatActivity() {
     val playerUpdateReciever = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
-                mp?.BROADCAST_SONG_UPDATE -> {
+                MediaService?.BROADCAST_SONG_UPDATE -> {
                     Log.i(TAG, "Received song update broadcast")
                     updateSongLables()
                     updateSongQueue()
                 }
-                mp?.BROADCAST_PLAY_PAUSE -> {
+                MediaService?.BROADCAST_PLAY_PAUSE -> {
                     Log.i(TAG, "Received song play pause broadcast")
                     updatePlayButton()
                 }
-                mp?.BROADCAST_SHUFFLE_UPDATE -> {
+                MediaService?.BROADCAST_SHUFFLE_UPDATE -> {
                     Log.i(TAG, "Recieved Shuffle Update Broadcast")
                     updateShuffleButton()
                     updateSongQueue()
                 }
-                mp?.BROADCAST_REPEAT_UPDATE -> {
+                MediaService?.BROADCAST_REPEAT_UPDATE -> {
                     Log.i(TAG, "Received Repeat Update Broadcast")
                     updateRepeatButton()
                 }
@@ -227,7 +227,7 @@ class PlayerActivity : AppCompatActivity() {
                 }
                 MotionEvent.ACTION_UP -> {
                     playerButtonPrev.clearColorFilter()
-                    mp?.control_prev()
+                    mp?.controlPrev()
                 }
             }
         }
@@ -238,7 +238,7 @@ class PlayerActivity : AppCompatActivity() {
                 }
                 MotionEvent.ACTION_UP -> {
                     playerButtonPlay.clearColorFilter()
-                    mp?.control_play()
+                    mp?.controlPlay()
                     updatePlayButton()
                 }
             }
@@ -250,7 +250,7 @@ class PlayerActivity : AppCompatActivity() {
                 }
                 MotionEvent.ACTION_UP -> {
                     playerButtonNext.clearColorFilter()
-                    mp?.control_next()
+                    mp?.controlNext()
                 }
             }
         }

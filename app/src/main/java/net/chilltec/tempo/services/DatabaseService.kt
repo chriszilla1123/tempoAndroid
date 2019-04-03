@@ -1,6 +1,5 @@
-package net.chilltec.tempo.Services
+package net.chilltec.tempo.services
 
-import android.app.Activity
 import android.app.Service
 import android.content.ComponentName
 import android.content.Context

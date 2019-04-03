@@ -17,8 +17,8 @@ import android.view.Menu
 import android.view.MenuItem
 import kotlinx.android.synthetic.main.activity_song_browser.*
 import kotlinx.android.synthetic.main.song_item.view.*
-import net.chilltec.tempo.Services.DatabaseService
-import net.chilltec.tempo.Services.MediaService
+import net.chilltec.tempo.services.DatabaseService
+import net.chilltec.tempo.services.MediaService
 import net.chilltec.tempo.R
 import net.chilltec.tempo.Adapters.SongBrowserAdapter
 import net.chilltec.tempo.R.id.songItemAddToPlaylist

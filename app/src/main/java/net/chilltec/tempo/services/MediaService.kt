@@ -1,11 +1,10 @@
-package net.chilltec.tempo.Services
+package net.chilltec.tempo.services
 
 import android.app.*
 import android.content.*
 import android.graphics.Color
 import android.media.*
-import android.net.ConnectivityManager
-import android.net.NetworkInfo
+import android.net.wifi.WifiManager
 import android.os.*
 import android.preference.PreferenceManager
 import android.support.v4.app.NotificationCompat
@@ -33,9 +32,7 @@ class MediaService : Service() {
     private val binder = LocalBinder()
     private lateinit var ms: MediaSessionCompat
     val http = OkHttpClient()
-    //private val baseUrl = "http://www.chrisco.top/api"
     private var baseUrl: String = ""
-    private val TAG = "MediaService"
     private var songSet: IntArray = intArrayOf()
     private var shuffleSet: IntArray = intArrayOf()
     private var playedSet: IntArray = intArrayOf()
@@ -51,17 +48,11 @@ class MediaService : Service() {
     private var dbIsInit: Boolean = false
     private var shuffleEnabled: Boolean = false
     private var repeatEnabled: Boolean = false
-    private var hasRepeated: Boolean = false
-    private var streamingEnabled: Boolean = true
-
-    //Constants
-    val BROADCAST_SONG_UPDATE = "BROADCAST_SONG_CHANGED"
-    val BROADCAST_PLAY_PAUSE = "BROADCAST_PLAY_PAUSE"
-    val BROADCAST_SHUFFLE_UPDATE = "BROADCAST_SHUFFLE_UPDATE"
-    val BROADCAST_REPEAT_UPDATE = "BROADCAST_REPEAT_UPDATE"
+    //private var hasRepeated: Boolean = false
+    //private var streamingEnabled: Boolean = true
 
     var db: DatabaseService? = null
-    val DBconnection = object : ServiceConnection {
+    private val dbConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as DatabaseService.LocalBinder
             db = binder.getService()
@@ -77,8 +68,8 @@ class MediaService : Service() {
         baseUrl = preferences.getString("server_base_url", "") ?: ""
         Log.i(TAG, "Using base URL: $baseUrl")
         //Bind to DatabaseService
-        val DBintent = Intent(this, DatabaseService::class.java)
-        bindService(DBintent, DBconnection, Context.BIND_AUTO_CREATE)
+        val dbIntent = Intent(this, DatabaseService::class.java)
+        bindService(dbIntent, dbConnection, Context.BIND_AUTO_CREATE)
 
         playerInit()
         noisyReceiverInit()
@@ -97,14 +88,14 @@ class MediaService : Service() {
         Log.i(TAG, "Service onDestroy")
         mp.release()
         unregisterReceiver(noiseReceiver)
-        unbindService(DBconnection)
+        unbindService(dbConnection)
     }
     inner class LocalBinder : Binder() {
         fun getService(): MediaService {
             return this@MediaService
         }
     }
-    fun playerInit() {
+    private fun playerInit() {
         //Sets a new MediaPlayer with the initial options.
         mpIsSafe = false
         mp.release()
@@ -125,11 +116,11 @@ class MediaService : Service() {
             }
             setOnCompletionListener {
                 Log.i(TAG, "onComplete")
-                control_next()
+                controlNext()
             }
             setOnErrorListener { mp, what, extra ->
                 Log.i(TAG, "onError")
-                Log.i(TAG, "${what.toString()}, $extra")
+                Log.i(TAG, "$what, $extra")
                 mp.reset()
                 true
             }
@@ -183,7 +174,7 @@ class MediaService : Service() {
             if (downloadList.isNotEmpty()) { downloadSong() }
             return
         }
-        val isWifiConnected = getWifiStatus()
+        val isWifiConnected = isWifiConnected()
         val songUrl: String = if (isWifiConnected) { "$baseUrl/getSongById/$songId" }
                                 else { "$baseUrl/getLowSongById/$songId" }
         if (songFile.exists()) { songFile.delete() }
@@ -197,7 +188,7 @@ class MediaService : Service() {
             override fun onResponse(call: Call, response: Response) {
                 val respBytes = response.body()?.bytes() ?: byteArrayOf()
                 response.body()?.close()
-                if (respBytes.size == 0 || response.code() != 200) {
+                if (respBytes.isEmpty() || response.code() != 200) {
                     Log.i(TAG, "ERROR downloading song $songId to cache. code: ${response.code()}")
                 }
                 else {
@@ -221,7 +212,7 @@ class MediaService : Service() {
         //Returns a list of all songs in the download queue, may be empty
         return downloadList.toIntArray()
     }
-    fun streamSong(id: Int){
+    private fun streamSong(id: Int){
         //Plays a song by ID through streaming mode.
         //Media playback controls are not available in this mode
         //Must set isStreaming flag to true
@@ -236,7 +227,7 @@ class MediaService : Service() {
             e.printStackTrace()
         }
     }
-    fun playSongFromFile(file: File): Boolean{
+    private fun playSongFromFile(file: File): Boolean{
         //Plays a song from a local file
         //Must clear the isStreaming flag to false, to enable media controls.
         try{
@@ -249,14 +240,17 @@ class MediaService : Service() {
         }
         return true
     }
-    fun getSongFile(id: Int): File? {
+    private fun getSongFile(id: Int): File? {
         //Returns the file for the given song, if it exists
         val songFileLoc = "$id.song"
         val songFile = File(cacheDir, songFileLoc)
-        if(songFile.exists()){ return songFile }
-        else { return null }
+        return if(songFile.exists()){
+            songFile
+        } else {
+            null
+        }
     }
-    fun isCached(id: Int): Boolean{
+    private fun isCached(id: Int): Boolean{
         //Returns true if the given songID has a downloaded file in cache
         val songFileLoc = "$id.song"
         val songFile = File(cacheDir, songFileLoc)
@@ -265,10 +259,10 @@ class MediaService : Service() {
     //Cache info
     fun getCachedSongList(): IntArray{
         //Disc access, call this from inside non-UI thread
-        var songList = mutableListOf<Int>()
+        val songList = mutableListOf<Int>()
         cacheDir.walkTopDown().forEach {
             if(it.exists() &&  it.extension == "song"){
-                var songID = it.nameWithoutExtension.toIntOrNull() ?: -1
+                val songID = it.nameWithoutExtension.toIntOrNull() ?: -1
                 if(songID > 0){
                     songList.add(songID)
                 }
@@ -281,7 +275,7 @@ class MediaService : Service() {
         Thread(Runnable {
             val curFile = "$curSong.song"
             val nextFile = "$nextSong.song"
-            var deletedFiles: Int = 0
+            var deletedFiles = 0
             var sizeInBytes: Long = 0
             cacheDir.walkTopDown().forEach {
                 if (it.exists() && it.name != curFile && it.name != nextFile) {
@@ -290,7 +284,7 @@ class MediaService : Service() {
                     deletedFiles++
                 }
             }
-            var sizeInMb: Int = (sizeInBytes.toDouble() / 1000000.toDouble()).roundToInt()
+            val sizeInMb: Int = (sizeInBytes.toDouble() / 1000000.toDouble()).roundToInt()
 
             this.runOnUiThread {
                 toast("Cleared ${sizeInMb}MB from $deletedFiles files in cache")
@@ -299,7 +293,7 @@ class MediaService : Service() {
         }).start()
     }
     //End Cache Info
-    fun updateCurNextSong(id: Int) {
+    private fun updateCurNextSong(id: Int) {
         //Sets the given id as the curSong id and updates nextSong
         if (songQueue.isEmpty()) return
         if (id in songQueue) {
@@ -316,11 +310,14 @@ class MediaService : Service() {
             }
         }
     }
-    fun getWifiStatus(): Boolean {
-        //Returns true if wifi is connected, otherwise false.
-        val connManager = this.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val activeNetwork: NetworkInfo? = connManager.activeNetworkInfo
-        return (activeNetwork?.type == ConnectivityManager.TYPE_WIFI)
+    private fun isWifiConnected(): Boolean {
+        var isWifiConnected = false
+        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        if(wifiManager.isWifiEnabled){
+            val wifiInfo = wifiManager.connectionInfo
+            if(wifiInfo.networkId != -1) isWifiConnected = true
+        }
+        return isWifiConnected
     }
     fun toggleShuffle() {
         if (shuffleEnabled) {
@@ -333,10 +330,10 @@ class MediaService : Service() {
         updateCurNextSong(curSong)
         sendShuffleUpdateBroadcast()
     }
-    fun shuffler(list: IntArray): IntArray {
+    private fun shuffler(list: IntArray): IntArray {
         //Shuffles a given IntArray containing song IDs
-        var listCopy = list.toMutableList()
-        var shuffledList = mutableListOf<Int>()
+        val listCopy = list.toMutableList()
+        val shuffledList = mutableListOf<Int>()
         val random = Random()
         while (listCopy.size > 0) {
             val randInt = random.nextInt().absoluteValue
@@ -354,40 +351,6 @@ class MediaService : Service() {
     fun getShuffleStatus(): Boolean = this.shuffleEnabled
     fun getRepeatStatus(): Boolean = this.repeatEnabled
 
-    //Broadcasts
-    fun sendSongUpdateBroadcast() {
-        Log.i(TAG, "Sending song update request")
-        Intent().also { intent ->
-            intent.action = BROADCAST_SONG_UPDATE
-            sendBroadcast(intent)
-        }
-    }
-
-    fun sendPlayPauseBroadcast() {
-        Log.i(TAG, "Sending PlayPause Notification")
-        Intent().also { intent ->
-            intent.action = BROADCAST_PLAY_PAUSE
-            sendBroadcast(intent)
-        }
-    }
-
-    fun sendShuffleUpdateBroadcast() {
-        Log.i(TAG, "Sending Shuffle Update Notification")
-        Intent().also { intent ->
-            intent.action = BROADCAST_SHUFFLE_UPDATE
-            sendBroadcast(intent)
-        }
-    }
-
-    fun sendRepeatUpdateBroadcast() {
-        Log.i(TAG, "Sending Repeat Update Notification")
-        Intent().also { intent ->
-            intent.action = BROADCAST_REPEAT_UPDATE
-            sendBroadcast(intent)
-        }
-    }
-    //End Broadcasts
-
     fun setSongList(list: IntArray) {
         //Accepts an array of Integer song IDs. The can corrispond to songs from the current album, artist, or playlist
         songSet = list.copyOf()
@@ -401,12 +364,6 @@ class MediaService : Service() {
         playedSet = intArrayOf()
     }
 
-    fun getSongList(): IntArray {
-        //Returns the songs that are in the current song set.
-        //This is not necessarily the order songs will be played in.
-        return this.songSet
-    }
-
     fun getSongQueue(): IntArray {
         //Returns the songs in the current song set, in the order they will be played.
         return this.songQueue
@@ -416,7 +373,7 @@ class MediaService : Service() {
         //Sets the current song to the given time, in milliseconds
         //Accepts a value between 0 and mp.duration
         try{
-            var curDuration = getCurrentDuration()
+            val curDuration = getCurrentDuration()
             if (time < 0 || time > curDuration) return
             if (curDuration == -1) return
             mp.seekTo(time)
@@ -429,10 +386,10 @@ class MediaService : Service() {
         //Returns the current song's integer progress in milliseconds.
         //A return value of 0 indicates the song has just started,
         // or an error has occured.
-        try {
-            return mp.currentPosition
+        return try {
+            mp.currentPosition
         } catch (e: Exception) {
-            return 0
+            0
         }
     }
 
@@ -445,7 +402,7 @@ class MediaService : Service() {
         //Safely request the current duration in milliseconds, with state and error checking.
         //Return 0 on error
         //This is the only place mp.duration or mp.getDuration should be called
-        var duration: Int = 0
+        var duration = 0
         try {
             duration = mp.duration
         } catch (e: IllegalStateException) {
@@ -465,7 +422,7 @@ class MediaService : Service() {
     }
 
     //Media Controls
-    fun control_prev() {
+    fun controlPrev() {
         Log.i(TAG, "Control_Prev")
 
         //Restart song if more than 2 seconds into it
@@ -491,7 +448,7 @@ class MediaService : Service() {
         }
     }
 
-    fun control_play() {
+    fun controlPlay() {
         //Functionality for all play/pause buttons across tempo. Handles both playing
         //and pausing.
         Log.i(TAG, "Control_Play")
@@ -501,34 +458,66 @@ class MediaService : Service() {
         sendPlayPauseBroadcast()
     }
 
-    fun control_pause() {
+    fun controlPause() {
         //Handles only pausing, does nothing if the player is already paused.
         //Used to handle bluetooth / headphone disconnections
         if (mp.isPlaying) mp.pause()
         updateNotification()
     }
 
-    fun control_next() {
+    fun controlNext() {
         Log.i(TAG, "Control_Next")
 
         if (mpIsSafe) mp.reset()
         else return
 
-        var toPlay: Int = nextSong
-        var songQueueIndex: Int = songQueue.indexOf(toPlay)
+        val toPlay: Int = nextSong
+        val songQueueIndex: Int = songQueue.indexOf(toPlay)
 
         if (toPlay != -1) {
-            if (songQueue.size > (songQueueIndex + 1)) {
-                nextSong = songQueue[songQueueIndex + 1]
-            } else {
-                nextSong = -1
-            }
+            nextSong = if(songQueue.size > (songQueueIndex + 1))
+                { songQueue[songQueueIndex + 1] }
+                else { -1 }
             playSongById(toPlay, true)
             curSong = toPlay
         } else {
             Log.i(TAG, "Hit end of queue")
         }
     }
+
+    //Broadcasts
+    private fun sendSongUpdateBroadcast() {
+        Log.i(TAG, "Sending song update request")
+        Intent().also { intent ->
+            intent.action = BROADCAST_SONG_UPDATE
+            sendBroadcast(intent)
+        }
+    }
+
+    private fun sendPlayPauseBroadcast() {
+        Log.i(TAG, "Sending PlayPause Notification")
+        Intent().also { intent ->
+            intent.action = BROADCAST_PLAY_PAUSE
+            sendBroadcast(intent)
+        }
+    }
+
+    private fun sendShuffleUpdateBroadcast() {
+        Log.i(TAG, "Sending Shuffle Update Notification")
+        Intent().also { intent ->
+            intent.action = BROADCAST_SHUFFLE_UPDATE
+            sendBroadcast(intent)
+        }
+    }
+
+    private fun sendRepeatUpdateBroadcast() {
+        Log.i(TAG, "Sending Repeat Update Notification")
+        Intent().also { intent ->
+            intent.action = BROADCAST_REPEAT_UPDATE
+            sendBroadcast(intent)
+        }
+    }
+    //End Broadcasts
 
     //Administrative Functions
     fun rescanLibrary() {
@@ -560,7 +549,7 @@ class MediaService : Service() {
     private var noiseReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             Log.i(TAG, "Noise received, pausing playback")
-            control_pause()
+            controlPause()
         }
     }
     private var msCallback: MediaSessionCompat.Callback = object : MediaSessionCompat.Callback() {
@@ -574,19 +563,19 @@ class MediaService : Service() {
             val codeStop = KeyEvent.KEYCODE_MEDIA_STOP
             val actionUp = KeyEvent.ACTION_UP
             //val actionDown = KeyEvent.ACTION_DOWN
-            var event: KeyEvent? = mediaButtonEvent?.getParcelableExtra(Intent.EXTRA_KEY_EVENT)
+            val event: KeyEvent? = mediaButtonEvent?.getParcelableExtra(Intent.EXTRA_KEY_EVENT)
             val keyCode = event?.keyCode ?: 0
 
             if (event?.action == actionUp) return true
 
             if (keyCode == codePlay || keyCode == codePause || keyCode == codePlayPause) {
-                control_play()
+                controlPlay()
             } else if (keyCode == codeNext) {
-                control_next()
+                controlNext()
             } else if (keyCode == codePrev) {
-                control_prev()
+                controlPrev()
             } else if (keyCode == codeStop) {
-                control_pause()
+                controlPause()
                 stopForeground(true)
             }
             return super.onMediaButtonEvent(mediaButtonEvent)
@@ -594,23 +583,23 @@ class MediaService : Service() {
     }
 
     private fun noisyReceiverInit() {
-        var filter = IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
+        val filter = IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
         registerReceiver(noiseReceiver, filter)
     }
 
     private fun msInit() {
-        var mediaReceiverComponent = ComponentName(applicationContext, MediaButtonReceiver::class.java)
+        val mediaReceiverComponent = ComponentName(applicationContext, MediaButtonReceiver::class.java)
         ms = MediaSessionCompat(applicationContext, "TempoSessionTag", mediaReceiverComponent, null)
         ms.setCallback(msCallback)
         ms.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS)
 
-        var mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON)
+        val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON)
         mediaButtonIntent.setClass(this, MediaButtonReceiver::class.java)
-        var pendingIntent = PendingIntent.getBroadcast(this, 0, mediaButtonIntent, 0)
+        val pendingIntent = PendingIntent.getBroadcast(this, 0, mediaButtonIntent, 0)
         ms.setMediaButtonReceiver(pendingIntent)
     }
 
-    fun setMetadata(id: Int) {
+    private fun setMetadata(id: Int) {
         //Accepts a SongID and sets media metadata
         Thread(Runnable {
             if (!dbIsInit) Thread.sleep(100)
@@ -724,7 +713,7 @@ class MediaService : Service() {
         startForeground(NotificationCompat.PRIORITY_HIGH, builder.build())
     }
 
-    fun updateNotification() {
+    private fun updateNotification() {
         val controller = ms.controller
         val metadata = controller.metadata
         try {
@@ -741,7 +730,7 @@ class MediaService : Service() {
         }
     }
 
-    fun createNotificationChannel(channelID: String, channelName: String): String {
+    private fun createNotificationChannel(channelID: String, channelName: String): String {
         val channel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel(
                 channelID, channelName,
@@ -755,5 +744,14 @@ class MediaService : Service() {
         val service = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         service.createNotificationChannel(channel)
         return channelID
+    }
+
+    companion object {
+        //Constants
+        const val BROADCAST_SONG_UPDATE = "BROADCAST_SONG_CHANGED"
+        const val BROADCAST_PLAY_PAUSE = "BROADCAST_PLAY_PAUSE"
+        const val BROADCAST_SHUFFLE_UPDATE = "BROADCAST_SHUFFLE_UPDATE"
+        const val BROADCAST_REPEAT_UPDATE = "BROADCAST_REPEAT_UPDATE"
+        const val TAG = "MediaService"
     }
 }

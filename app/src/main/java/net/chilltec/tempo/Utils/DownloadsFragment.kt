@@ -4,20 +4,18 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.opengl.Visibility
 import android.os.Bundle
 import android.os.IBinder
 import android.support.v4.app.Fragment
 import android.support.v7.widget.LinearLayoutManager
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.download_queue_browser.*
 import net.chilltec.tempo.Adapters.DownloadQueueAdapter
 import net.chilltec.tempo.R
-import net.chilltec.tempo.Services.DatabaseService
-import net.chilltec.tempo.Services.MediaService
+import net.chilltec.tempo.services.DatabaseService
+import net.chilltec.tempo.services.MediaService
 import org.jetbrains.anko.support.v4.runOnUiThread
 
 class DownloadsFragment : Fragment() {
