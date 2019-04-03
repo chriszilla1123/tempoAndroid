@@ -23,8 +23,6 @@ import java.net.URLEncoder
 
 class DatabaseService : Service() {
     private val binder = LocalBinder()
-    private val TAG = "DatabaseService"
-    //private val baseURL = "http://www.chrisco.top/api"
     private var baseURL: String = ""
     private lateinit var artistsDB: Array<Artist>
     private lateinit var albumsDB: Array<Album>
@@ -93,26 +91,32 @@ class DatabaseService : Service() {
     fun getAlbumsDB(): Array<Album> = albumsDB
     fun getSongsDB(): Array<Song> = songsDB
     fun getPlaylistsDB(): Array<Playlist> = playlistsDB
+    @Suppress("unused")
     fun getPlaylistSongsDB(): Array<PlaylistSong> = playlistSongsDB
     //End full database file functions
 
     //Database entry counting functions
+    @Suppress("MemberVisibilityCanBePrivate")
     fun numArtists(): Int {
         if(!isArtistsDBInit) return -1
         return artistsDB.size
     }
+    @Suppress("MemberVisibilityCanBePrivate")
     fun numAlbums(): Int {
         if(!isAlbumsDBInit) return -1
         return albumsDB.size
     }
+    @Suppress("MemberVisibilityCanBePrivate")
     fun numSongs(): Int {
         if(!isSongsDBInit) return -1
         return songsDB.size
     }
+    @Suppress("MemberVisibilityCanBePrivate")
     fun numPlaylists(): Int {
         if(!isPlaylistsDBInit) return -1
         return playlistsDB.size
     }
+    @Suppress("MemberVisibilityCanBePrivate")
     fun numPlaylistSongs(): Int {
         if(!isPlaylistSongsDBInit) return -1
         return playlistSongsDB.size
@@ -152,6 +156,7 @@ class DatabaseService : Service() {
         }
         return playlistList
     }
+    @Suppress("unused")
     fun getAllPlaylistSongIds(): IntArray {
         val numPlaylistSongs = numPlaylistSongs()
         val playlistSongsList = IntArray(numPlaylistSongs)
@@ -221,31 +226,29 @@ class DatabaseService : Service() {
         val songArtist = getArtistBySongId(id)
         val artURI = getArtworkUriBySongId(id)
 
-        val metadata =
-                if(artURI != null){
-                    val artBMP =  MediaStore.Images.Media.getBitmap(this.contentResolver, artURI)
-                    MediaMetadataCompat.Builder()
-                        .putString(MediaMetadataCompat.METADATA_KEY_TITLE, songTitle)
-                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE,
-                            "$songArtist - $songAlbum")
-                        .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, artBMP)
-                        .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, id.toString())
-                        .build()
-                }
-                else {
-                    MediaMetadataCompat.Builder()
-                        .putString(MediaMetadataCompat.METADATA_KEY_TITLE, songTitle)
-                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE,
-                            "$songArtist - $songAlbum")
-                        .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, id.toString())
-                        .build()
-                }
-
-        return metadata
+        return if(artURI != null){
+            val artBMP =  MediaStore.Images.Media.getBitmap(contentResolver, artURI)
+            MediaMetadataCompat.Builder()
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, songTitle)
+                .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE,
+                    "$songArtist - $songAlbum")
+                .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, artBMP)
+                .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, id.toString())
+                .build()
+        }
+        else {
+            MediaMetadataCompat.Builder()
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, songTitle)
+                .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE,
+                    "$songArtist - $songAlbum")
+                .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, id.toString())
+                .build()
+        }
     }
     //End info by Song ID
 
     //Info by Album ID
+    @Suppress("unused")
     fun albumHasArtwork(id: Int): Boolean{
         val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
         val artDir = File(artDirLoc)
@@ -256,6 +259,7 @@ class DatabaseService : Service() {
         val albumArtFile = File(albumArtLoc)
         return albumArtFile.exists()
     }
+    @Suppress("unused")
     fun getArtworkUriByAlbumId(id: Int): Uri? {
         //Returns the File object for the album artwork
         val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
@@ -286,7 +290,7 @@ class DatabaseService : Service() {
     }
     fun getSongListByArtistId(id: Int): IntArray{
         //Returns the list of all song IDs by a given artist, referenced by artist ID
-        var songList = mutableListOf<Int>()
+        val songList = mutableListOf<Int>()
         for(song in songsDB){
             if(song.artist == id) songList.add(song.id)
         }
@@ -534,7 +538,7 @@ class DatabaseService : Service() {
             val playlistsFile = File(filesDir, playlistsFileLoc)
             val playlistSongsFile = File(filesDir, playlistSongsFileLoc)
             val playlistTimestampFile = File(filesDir, playlistTimestampFileLoc)
-            var finishedInit: Boolean = false
+            var finishedInit = false
 
             if(!playlistTimestampFile.exists()){
                 playlistTimestampFile.createNewFile()
@@ -646,7 +650,6 @@ class DatabaseService : Service() {
         }
         clearDirctory(artDir)
 
-        val albumIDs: ArrayList<Int> //IDs of only albums that have art
         var numDownloaded = 0
         for(album in albumsDB){
             if(album.albumArt == ""){
@@ -665,7 +668,7 @@ class DatabaseService : Service() {
                     override fun onResponse(call: Call, response: Response){
                         val respBytes = response.body()?.bytes() ?: byteArrayOf()
                         response.body()?.close()
-                        if(respBytes.size == 0){
+                        if(respBytes.isEmpty()){
                             Log.i(TAG, "ERROR downloading artwork for album id ${album.id}")
                             artFile.delete()
                         }
@@ -687,16 +690,16 @@ class DatabaseService : Service() {
     }
     fun getAlbumArtList(): List<File?>{
         //Can block UI, call from inside non-UI thread
-        var albumList = mutableListOf<File?>()
-        var artDirLoc = filesDir.absolutePath + File.separator + "artwork"
+        val albumList = mutableListOf<File?>()
+        val artDirLoc = filesDir.absolutePath + File.separator + "artwork"
         for(album in albumsDB){
             if(album.albumArt == ""){
                 albumList.add(null)
             }
             else{
-                var albumID = album.id
-                var  albumArtFileLoc = artDirLoc + File.separator + albumID + ".art"
-                var albumArtFile = File(albumArtFileLoc)
+                val albumID = album.id
+                val  albumArtFileLoc = artDirLoc + File.separator + albumID + ".art"
+                val albumArtFile = File(albumArtFileLoc)
                 if(albumArtFile.exists()){
                     albumList.add(albumArtFile)
                 }
@@ -706,7 +709,7 @@ class DatabaseService : Service() {
         albumList.toList()
         return albumList
     }
-    fun clearDirctory(dir: File){
+    private fun clearDirctory(dir: File){
         if(dir.isDirectory) {
             val children = dir.list()
             for (i in children.indices) {
@@ -714,5 +717,9 @@ class DatabaseService : Service() {
                 File(name).delete()
             }
         }
+    }
+
+    companion object {
+        const val TAG = "DatabaseService"
     }
 }
