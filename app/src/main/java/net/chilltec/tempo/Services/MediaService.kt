@@ -5,7 +5,6 @@ import android.content.*
 import android.graphics.Color
 import android.media.*
 import android.net.ConnectivityManager
-import android.net.Network
 import android.net.NetworkInfo
 import android.os.*
 import android.preference.PreferenceManager
@@ -43,7 +42,7 @@ class MediaService : Service() {
     private var songQueue: IntArray = intArrayOf()
     private var curSong: Int = -1
     private var nextSong: Int = -1
-    private var cacheQueue: Queue<Int> = LinkedList()
+    private var downloadList: MutableList<Int> = mutableListOf()
 
     //Flags
     private var mpIsSafe: Boolean = true
@@ -78,7 +77,7 @@ class MediaService : Service() {
         baseUrl = preferences.getString("server_base_url", "") ?: ""
         Log.i(TAG, "Using base URL: $baseUrl")
         //Bind to DatabaseService
-        var DBintent = Intent(this, DatabaseService::class.java)
+        val DBintent = Intent(this, DatabaseService::class.java)
         bindService(DBintent, DBconnection, Context.BIND_AUTO_CREATE)
 
         playerInit()
@@ -138,7 +137,7 @@ class MediaService : Service() {
     }
     fun playSongById(songID: Int, force: Boolean = false) {
         //Plays a given song, and pre-loads the next song, if applicable
-        //If force is true, the cacheQueue will be cleared and songID pushed to the front
+        //If force is true, the songID will be added to the front of the list.
         //  This is only used when a user directly requests a song by clicking.
         Thread(Runnable {
             if (songID <= 0) {
@@ -158,32 +157,30 @@ class MediaService : Service() {
                 streamSong(songID)
                 Log.i(TAG, "Playing song $songID from Remote Stream")
                 if(force){
-                    cacheQueue.clear()
-                    cacheQueue.add(curSong)
-                    cacheQueue
-                    getInternetSong()
+                    downloadList.add(0, curSong)
+                    downloadSong()
                 }
-                else if(curSong !in cacheQueue){
-                    cacheQueue.add(curSong)
-                    if(!curDownloading) getInternetSong()
+                else if(curSong !in downloadList){
+                    downloadList.add(curSong)
+                    if(!curDownloading) downloadSong()
                 }
             }
             if(!isCached(nextSong)){
-                cacheQueue.add(nextSong)
-                if(!curDownloading) getInternetSong()
+                downloadList.add(nextSong)
+                if(!curDownloading) downloadSong()
             }
         }).start()
     }
-    private fun getInternetSong() {
-        //Plays song from the internet, either by downloading it to cache or streaming.
-        if (cacheQueue.isEmpty()) return
+    private fun downloadSong() {
+        //Downloads a song.
+        if (downloadList.isEmpty()) return
         curDownloading = true
-        val songId = cacheQueue.remove()
+        val songId: Int = downloadList.removeAt(0)
         if(songId < 1) return
         val songFile = File(cacheDir, "$songId.song")
         if (songFile.exists() && songFile.length() > 0) {
-            //Already downloaded, download next item in cacheQueue if applicable
-            if (cacheQueue.isNotEmpty()) { getInternetSong() }
+            //Already downloaded, download next item in downloadList if applicable
+            if (downloadList.isNotEmpty()) { downloadSong() }
             return
         }
         val isWifiConnected = getWifiStatus()
@@ -206,7 +203,7 @@ class MediaService : Service() {
                 else {
                     songFile.writeBytes(respBytes)
                     Log.i(TAG, "Successfully cached song $songId")
-                    if (cacheQueue.isNotEmpty()) getInternetSong()
+                    if (downloadList.isNotEmpty()) downloadSong()
                     else curDownloading = false
                 }
             }
@@ -215,16 +212,19 @@ class MediaService : Service() {
     fun addSongToCacheQueue(id: Int){
         if(id < 1) return
         Log.i(TAG, "")
-        cacheQueue.add(id)
+        downloadList.add(id)
         Thread(Runnable{
-            if(!curDownloading){ getInternetSong() }
+            if(!curDownloading){ downloadSong() }
         }).start()
     }
     fun getCacheQueue(): IntArray{
         //Returns a list of all songs in the download queue, may be empty
-        return cacheQueue.toIntArray()
+        return downloadList.toIntArray()
     }
     fun streamSong(id: Int){
+        //Plays a song by ID through streaming mode.
+        //Media playback controls are not available in this mode
+        //Must set isStreaming flag to true
         val url = "$baseUrl/getSongById/$id"
         try {
             isStreaming = true
@@ -237,6 +237,8 @@ class MediaService : Service() {
         }
     }
     fun playSongFromFile(file: File): Boolean{
+        //Plays a song from a local file
+        //Must clear the isStreaming flag to false, to enable media controls.
         try{
             isStreaming = false
             playerInit()

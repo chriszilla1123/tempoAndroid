@@ -1,10 +1,11 @@
 package net.chilltec.tempo.DataTypes
 
-data class Song(val artist: Int,
+data class Song(val id: Int,
+                val artist: Int,
                 val album: Int,
                 val title: String,
                 val fileType: String,
-                val directory: String,
-                val id: Int) {
+                val fileSize: Int,
+                val directory: String) {
     override fun toString() = "$title (id=$id)"
 }
