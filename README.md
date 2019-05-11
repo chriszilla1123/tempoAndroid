@@ -18,7 +18,7 @@ Installation
 
 Build from source:
 * Clone the github repository
-	* `git clone https://github.com/chriszilla1123/tempoAndroid`
+ `git clone https://github.com/chriszilla1123/tempoAndroid`
 * Import into [Android Studio](https://developer.android.com/studio) for installation
 	
 
