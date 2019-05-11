@@ -1,7 +1,3 @@
-
-Welcome file
-
-
 # <img src="https://raw.githubusercontent.com/chriszilla1123/tempoWeb/master/src/assets/tempo_logo.png" alt="Logo" width="150"/> Tempo Android
 
 
