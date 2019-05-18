@@ -5,6 +5,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.IBinder
 import android.os.*
@@ -14,9 +16,11 @@ import android.support.v4.media.MediaMetadataCompat
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import net.chilltec.tempo.R
 import net.chilltec.tempo.dataTypes.*
 import okhttp3.*
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.IOException
 import java.net.URLEncoder
 
@@ -227,7 +231,12 @@ class DatabaseService : Service() {
         val artURI = getArtworkUriBySongId(id)
 
         return if(artURI != null){
-            val artBMP =  MediaStore.Images.Media.getBitmap(contentResolver, artURI)
+            var artBMP: Bitmap?
+            try{
+                artBMP =  MediaStore.Images.Media.getBitmap(contentResolver, artURI)
+            }catch(e: FileNotFoundException){
+                artBMP = null
+            }
             MediaMetadataCompat.Builder()
                 .putString(MediaMetadataCompat.METADATA_KEY_TITLE, songTitle)
                 .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE,
