@@ -67,7 +67,7 @@ class DatabaseService : Service() {
     override fun onCreate(){
         Log.i(TAG, "Database Service Started")
         val preferences = PreferenceManager.getDefaultSharedPreferences(this)
-        baseURL = preferences.getString("server_base_url", "") ?: ""
+        baseURL = preferences.getString("server_base_url", "https://www.chilltec.net/api") ?: ""
         Log.i(TAG, "Using base URL: $baseURL")
         //Bind the MediaService
         val mpIntent = Intent(this, MediaService::class.java)
